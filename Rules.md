@@ -1,7 +1,7 @@
 #BoneyPlays 
 
 You get 500 health points, 
-Each player grabs 6 attack cards
+Each player gets 6 attack cards
 and they have to answer the
 questions correctly to attack
 the other players with their 
