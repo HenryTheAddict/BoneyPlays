@@ -914,6 +914,7 @@
         fail: new Audio('Assets/Audio/Sounds/Attack fail.wav')
       },
       init() {
+        this.loadSettings();
         this.shuffleMusicQueue();
         
         // Listen for when a song ends to play the next one
@@ -926,6 +927,23 @@
         // Pre-load audio to prevent playback delays/issues
         for (let key in this.sounds) {
           this.sounds[key].load();
+        }
+      },
+      saveSettings() {
+        localStorage.setItem('boneyMusicVolume', this.musicVolume);
+        localStorage.setItem('boneySfxVolume', this.sfxVolume);
+      },
+      loadSettings() {
+        const savedMusic = localStorage.getItem('boneyMusicVolume');
+        const savedSfx = localStorage.getItem('boneySfxVolume');
+        
+        if (savedMusic !== null) {
+          this.musicVolume = parseFloat(savedMusic);
+          document.getElementById('music-volume').value = this.musicVolume;
+        }
+        if (savedSfx !== null) {
+          this.sfxVolume = parseFloat(savedSfx);
+          document.getElementById('sfx-volume').value = this.sfxVolume;
         }
       },
       shuffleMusicQueue() {
@@ -988,11 +1006,13 @@
     document.getElementById('music-volume').addEventListener('input', (e) => {
       audioSystem.musicVolume = parseFloat(e.target.value);
       audioSystem.updateVolumes();
+      audioSystem.saveSettings();
     });
 
     document.getElementById('sfx-volume').addEventListener('input', (e) => {
       audioSystem.sfxVolume = parseFloat(e.target.value);
       audioSystem.updateVolumes();
+      audioSystem.saveSettings();
     });
     
     document.getElementById('close-settings-btn').addEventListener('click', () => {
@@ -1876,12 +1896,19 @@
     // --- Start Screen & Setup Logic ---
     const slideshowImages = [
       "Assets/Other/Credita.png",
+      "Assets/Other/JLT.png",
       "Assets/Other/PSA.png",
+      "Assets/Other/Tap.png",
       "Assets/Other/bones.png",
+      "Assets/Other/doyou.png",
+      "Assets/Other/inshallah.png",
       "Assets/Other/loser.png",
       "Assets/Other/possibke.png",
       "Assets/Other/start.png",
-      "Assets/Other/unfair.png"
+      "Assets/Other/this is pokemon but bones.png",
+      "Assets/Other/unfair.png",
+      "Assets/Other/welove.png",
+      "Assets/Other/winner.png"
     ];
 
     let currentSlideQueue = [];
