@@ -1,0 +1,2178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Prevent pinch zoom on smartboards -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BoneyPlays</title>
+
+  <!-- Import Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: transparent;
+      --line: #e0e0e0;
+      --text: #111111;
+      --text-dim: #666666;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Inter", system-ui, -apple-system, sans-serif !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background: radial-gradient(circle at center, #ffffff, #e0e0e0);
+      color: var(--text);
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .board {
+      height: 100%;
+      position: relative;
+      display: none; /* Hidden until game starts */
+    }
+
+    .health-bars {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 1.5rem 3rem;
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(10px);
+      border-bottom: 2px solid var(--line);
+      z-index: 20;
+    }
+
+    .health-bar-container {
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .health-bar-container.right {
+      align-items: flex-end;
+    }
+
+    .health-label {
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .health-track {
+      width: 100%;
+      height: 24px;
+      background: #eee;
+      border: 2px solid #000;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .health-trail {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: #e74c3c;
+      width: 100%; 
+      transition: width 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s; /* Slower, with a 0.5s delay so the main bar moves first */
+      z-index: 1;
+    }
+
+    .health-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%; 
+      transition: width 0.3s ease-out, background-color 0.3s ease; 
+      z-index: 2;
+    }
+
+    .health-high { background: #2ecc71; } /* Green */
+    .health-med { background: #f1c40f; }  /* Yellow */
+    .health-low { background: #e67e22; }  /* Orange/Red */
+
+    .health-fill.poisoned {
+      background: #9b59b6 !important; /* Purple for poison */
+      animation: pulsePoison 2s infinite;
+    }
+
+    @keyframes pulsePoison {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .poison-badge {
+      background: #9b59b6;
+      color: white;
+      font-size: 0.8rem;
+      font-weight: bold;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .player {
+      position: absolute;
+      inset: 0;
+      padding: 8rem 2rem 2rem; /* padding-top to clear health bars */
+      display: none; /* hidden by default */
+      flex-direction: column;
+      background: transparent;
+    }
+
+    .player.active {
+      display: flex;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: auto;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .status {
+      margin: 0;
+      font-size: 1.2rem;
+      color: var(--text-dim);
+      min-height: 1.5rem;
+    }
+
+    .hand {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      padding-bottom: 2rem;
+      height: 350px; 
+    }
+
+    .card-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* The container stays the visual size we want in the hand */
+      width: 140px; 
+      height: 200px;
+      perspective: 1000px;
+      /* We control the gap via margin instead of flex gap so we can transition it */
+      margin: 0 0.5rem;
+      transition: margin 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* When the hand is in 'smoosh' mode (a card is selected), we collapse the containers */
+    .hand.is-smooshed .card-container {
+      margin: 0 -30px; /* Pull them tightly together */
+    }
+    
+    /* But we leave the selected container wide so the big card has space to launch from */
+    .hand.is-smooshed .card-container.is-selected {
+      margin: 0 1rem;
+    }
+
+    .card {
+      /* Base size is massive so the browser renders a high-res texture */
+      width: 800px; 
+      height: 1143px; /* proportional to 140x200 */
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 48px; /* scaled up border radius */
+      cursor: pointer;
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+      position: absolute; 
+      /* Center the massive card exactly over its tiny container */
+      bottom: -471px; /* (1143 - 200) / 2 */
+      left: -330px; /* (800 - 140) / 2 */
+      z-index: 1;
+      transform-origin: center center;
+      /* Scale it down to fit the container size (140 / 800 = 0.175) */
+      transform: scale(0.175);
+      will-change: transform;
+    }
+
+    /* Animation for shuffling cards in (ONLY USED AT START) */
+    .shuffle-in {
+      animation: weirdShuffle 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes weirdShuffle {
+      0% {
+        transform: translate(200px, -300px) rotate(45deg) scale(0.05);
+        opacity: 0;
+      }
+      50% {
+        transform: translate(-50px, -100px) rotate(-15deg) scale(0.2);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(0, 0) scale(0.175);
+        opacity: 1;
+      }
+    }
+
+    /* Animation for cards sliding away when turn ends */
+    .slide-away {
+      animation: slideDown 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+    }
+
+    @keyframes slideDown {
+      0% {
+        transform: translate(0, 0) scale(0.175);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(0, 300px) scale(0.175) rotate(10deg);
+        opacity: 0;
+      }
+    }
+
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      border-radius: 48px;
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.2));
+      pointer-events: none;
+      transition: filter 0.4s ease;
+      will-change: filter;
+    }
+
+    .card.is-selected {
+      z-index: 10;
+      /* Transform handled by JS */
+    }
+
+    .card.is-selected img {
+      filter: drop-shadow(0 60px 100px rgba(0,0,0,0.5));
+    }
+
+    .player {
+      transition: opacity 0.5s ease, filter 0.5s ease;
+    }
+
+    /* We don't need the inactive class anymore since they are completely hidden */
+    .player.inactive {
+      display: none;
+    }
+
+    #start-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      background-color: #000;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .slideshow-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: translateX(100%);
+      transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: transform;
+    }
+
+    .slideshow-img.active {
+      transform: translateX(0);
+    }
+
+    .slideshow-img.exit {
+      transform: translateX(-100%);
+    }
+
+    .tap-to-play {
+      position: absolute;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 3rem;
+      font-weight: bold;
+      color: white;
+      text-transform: uppercase;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+      animation: blinkText 1.5s infinite;
+      user-select: none;
+      width: 100%;
+      text-align: center;
+      z-index: 105; /* Above slideshow */
+    }
+
+    @keyframes blinkText {
+      0% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    #turn-banner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      font-weight: bold;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      padding: 2rem 4rem;
+      border-radius: 20px;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .show-banner {
+      animation: flashBanner 2s ease-in-out forwards;
+    }
+
+    @keyframes flashBanner {
+      0% { opacity: 0; transform: translate(-50%, -40%); }
+      15% { opacity: 1; transform: translate(-50%, -50%); }
+      85% { opacity: 1; transform: translate(-50%, -50%); }
+      100% { opacity: 0; transform: translate(-50%, -60%); }
+    }
+
+    #name-setup {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      z-index: 110; /* Above start screen */
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+    }
+
+    .setup-box {
+      background: #f9f9f9;
+      padding: 2rem 3rem;
+      border-radius: 16px;
+      border: 2px solid var(--line);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      width: 800px; /* Made wider for the keyboard */
+      max-width: 90vw;
+    }
+
+    .setup-inputs {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+    }
+
+    .setup-box h2 {
+      margin: 0;
+      font-size: 2rem;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+    }
+
+    .input-group label {
+      font-weight: bold;
+      color: var(--text-dim);
+    }
+
+    .input-group input {
+      padding: 0.8rem;
+      font-size: 1.5rem;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      outline: none;
+      text-align: center;
+      background: #fff;
+    }
+
+    .input-group input:focus {
+      border-color: #000;
+      background: #eef8ff;
+    }
+
+    /* On-Screen Keyboard */
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      background: #e0e0e0;
+      padding: 1rem;
+      border-radius: 12px;
+    }
+
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .kb-key {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 1rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      min-width: 3rem;
+      text-align: center;
+      box-shadow: 0 2px 0 #bbb;
+    }
+
+    .kb-key:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 #bbb;
+      background: #f0f0f0;
+    }
+
+    .kb-key.wide {
+      min-width: 5rem;
+      font-size: 1.2rem;
+    }
+
+    .kb-key.space {
+      width: 50%;
+    }
+
+    .kb-key.action {
+      background: #333;
+      color: #fff;
+      border-color: #222;
+      box-shadow: 0 2px 0 #111;
+    }
+
+    .kb-key.action:active {
+      box-shadow: 0 0 0 #111;
+      background: #222;
+    }
+
+    #start-game-btn {
+      padding: 1rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    #start-game-btn:active {
+      background: #333;
+    }
+
+    #dev-options {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: #333;
+      color: #0f0;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      z-index: 200;
+      display: none;
+    }
+
+    /* Action Selection & Trivia Overlay */
+    #action-overlay, #trivia-overlay, #settings-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 120;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      backdrop-filter: blur(5px);
+    }
+    
+    #settings-overlay {
+      z-index: 400; /* above everything */
+    }
+
+    .modal-box {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 3rem;
+      border-radius: 20px;
+      border: 4px solid var(--line);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      text-align: center;
+      max-width: 80vw;
+      width: 600px;
+      backdrop-filter: blur(10px);
+      color: var(--text);
+    }
+
+    .modal-box h2 {
+      font-size: 2.5rem;
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+    
+    .modal-box p {
+      font-size: 1.5rem;
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+    }
+
+    #trivia-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .action-btn {
+      display: block;
+      width: 100%;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+      background: #f0f0f0;
+      color: var(--text);
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .trivia-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: white;
+      border: 4px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+      min-height: 120px;
+    }
+
+    /* Kahoot Colors */
+    .trivia-btn:nth-child(1) { background-color: #e21b3c; } /* Red */
+    .trivia-btn:nth-child(2) { background-color: #1368ce; } /* Blue */
+    .trivia-btn:nth-child(3) { background-color: #d89e00; } /* Yellow */
+    .trivia-btn:nth-child(4) { background-color: #26890c; } /* Green */
+
+    .action-btn:hover, .trivia-btn:hover {
+      filter: brightness(1.1);
+      transform: scale(1.02);
+    }
+    
+    .action-btn:active, .trivia-btn:active {
+      transform: translateY(4px);
+      box-shadow: none;
+    }
+
+    .trivia-btn.correct {
+      border-color: #fff;
+      filter: brightness(1.2);
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255,255,255,0.8);
+      z-index: 10;
+    }
+
+    .trivia-btn.wrong {
+      opacity: 0.3;
+      filter: grayscale(0.8);
+    }
+
+    #trivia-timer-container {
+      width: 100%;
+      height: 24px;
+      background: #eee;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+      border: 2px solid #ccc;
+    }
+
+    #trivia-timer-bar {
+      height: 100%;
+      width: 100%;
+      background: #333;
+      transition: width 0.1s linear, background-color 0.3s;
+    }
+
+    /* Game Over / Death Styles */
+    #game-over-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      z-index: 300;
+      display: none;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      opacity: 0;
+      transition: opacity 1s ease;
+      overflow: hidden;
+    }
+
+    .game-over-text-content {
+      z-index: 310; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .winner-slides-container {
+      z-index: 310;
+      width: 40%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border-left: 4px solid #f1c40f;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 0;
+      overflow-y: auto;
+      gap: 2rem;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    }
+
+    .winner-slides-title {
+      font-size: 2rem;
+      color: #f1c40f;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      flex-shrink: 0;
+    }
+
+    .winner-card-slide {
+      width: 280px; /* 140 * 2 */
+      height: 400px; /* 200 * 2 */
+      flex-shrink: 0;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      animation: slideInRight 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    }
+
+    .winner-card-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: transparent;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+    }
+
+    @keyframes slideInRight {
+      0% { transform: translateX(100%) rotate(10deg); opacity: 0; }
+      100% { transform: translateX(0) rotate(0); opacity: 1; }
+    }
+
+    #confetti-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 305;
+      pointer-events: none;
+    }
+
+    .death-anim {
+      animation: deathFall 2s cubic-bezier(0.5, 0, 0.5, 1) forwards;
+      pointer-events: none;
+    }
+
+    @keyframes deathFall {
+      0% { filter: grayscale(0) sepia(0); transform: scale(1); }
+      20% { filter: grayscale(1) sepia(1) hue-rotate(-50deg); transform: scale(1.05) rotate(-2deg); }
+      30% { transform: scale(1.05) rotate(2deg); }
+      40% { transform: scale(1.05) rotate(-2deg); }
+      100% { filter: grayscale(1) sepia(1) hue-rotate(-50deg); transform: translateY(100vh) rotate(20deg) scale(0.5); opacity: 0; }
+    }
+
+    #battle-log {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      z-index: 150;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div id="start-screen">
+    <div id="slideshow-container"></div>
+    <div class="tap-to-play">Tap to Play</div>
+  </div>
+  
+  <div id="name-setup">
+    <div class="setup-box">
+      <h2>Enter Players</h2>
+      <div class="setup-inputs">
+        <div class="input-group">
+          <label for="p1-name">Player 1 Name</label>
+          <input type="text" id="p1-name" placeholder="Player 1" value="Player 1" />
+        </div>
+        <div class="input-group">
+          <label for="p2-name">Player 2 Name</label>
+          <input type="text" id="p2-name" placeholder="Player 2" value="Player 2" />
+        </div>
+      </div>
+      
+      <!-- Virtual Keyboard -->
+      <div class="keyboard" id="virtual-keyboard">
+        <div class="kb-row">
+          <div class="kb-key" data-key="Q">Q</div>
+          <div class="kb-key" data-key="W">W</div>
+          <div class="kb-key" data-key="E">E</div>
+          <div class="kb-key" data-key="R">R</div>
+          <div class="kb-key" data-key="T">T</div>
+          <div class="kb-key" data-key="Y">Y</div>
+          <div class="kb-key" data-key="U">U</div>
+          <div class="kb-key" data-key="I">I</div>
+          <div class="kb-key" data-key="O">O</div>
+          <div class="kb-key" data-key="P">P</div>
+        </div>
+        <div class="kb-row">
+          <div class="kb-key" data-key="A">A</div>
+          <div class="kb-key" data-key="S">S</div>
+          <div class="kb-key" data-key="D">D</div>
+          <div class="kb-key" data-key="F">F</div>
+          <div class="kb-key" data-key="G">G</div>
+          <div class="kb-key" data-key="H">H</div>
+          <div class="kb-key" data-key="J">J</div>
+          <div class="kb-key" data-key="K">K</div>
+          <div class="kb-key" data-key="L">L</div>
+        </div>
+        <div class="kb-row">
+          <div class="kb-key" data-key="Z">Z</div>
+          <div class="kb-key" data-key="X">X</div>
+          <div class="kb-key" data-key="C">C</div>
+          <div class="kb-key" data-key="V">V</div>
+          <div class="kb-key" data-key="B">B</div>
+          <div class="kb-key" data-key="N">N</div>
+          <div class="kb-key" data-key="M">M</div>
+          <div class="kb-key wide action" data-key="BACKSPACE">⌫ Del</div>
+        </div>
+        <div class="kb-row">
+          <div class="kb-key space" data-key=" ">Space</div>
+          <div class="kb-key wide action" id="start-game-btn">Start Game</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="turn-banner"></div>
+  <div id="dev-options">
+    <h3>Developer Options</h3>
+    <p>Debug info will go here.</p>
+    <button onclick="document.getElementById('dev-options').style.display='none'">Close</button>
+  </div>
+
+  <div id="battle-log"></div>
+
+  <div id="action-overlay">
+    <div class="modal-box" id="action-box">
+      <h2>Choose Action</h2>
+      <div id="action-list"></div>
+      <button class="action-btn" id="cancel-action-btn" style="background: #ffcccc; margin-top: 2rem;">Cancel</button>
+    </div>
+  </div>
+
+  <div id="trivia-overlay">
+    <div class="modal-box" id="trivia-box" style="width: 800px; max-width: 95vw;">
+      <h2 id="trivia-title">Trivia!</h2>
+      <div id="trivia-timer-container"><div id="trivia-timer-bar"></div></div>
+      <p id="trivia-question" style="font-size: 2rem; font-weight: bold;"></p>
+      <div id="trivia-options"></div>
+    </div>
+  </div>
+
+  <div id="settings-overlay">
+    <div class="modal-box" id="settings-box">
+      <h2>Settings</h2>
+      <div class="input-group" style="margin-bottom: 1.5rem; text-align: left;">
+        <label for="music-volume">Music Volume</label>
+        <input type="range" id="music-volume" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+      </div>
+      <div class="input-group" style="margin-bottom: 1.5rem; text-align: left;">
+        <label for="sfx-volume">SFX Volume</label>
+        <input type="range" id="sfx-volume" min="0" max="1" step="0.05" value="0.8" style="width: 100%;">
+      </div>
+      <button class="action-btn" id="close-settings-btn" style="margin-top: 2rem;">Close Settings</button>
+    </div>
+  </div>
+
+  <div id="game-over-screen">
+    <canvas id="confetti-canvas"></canvas>
+    <div class="game-over-text-content">
+      <h1 id="winner-text" style="font-size: 5rem; margin-bottom: 1rem; color: #f1c40f; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">Player 1 Wins!</h1>
+      <p id="loser-text" style="font-size: 2rem; margin-bottom: 3rem; color: #ccc;">Player 2 has turned to dust...</p>
+      <button id="play-again-btn" onclick="location.reload()" class="action-btn" style="width: auto; padding: 1.5rem 4rem; font-size: 2rem; background: #fff; color: #000; box-shadow: 0 10px 30px rgba(255,255,255,0.2); transition: opacity 0.5s ease;">Play Again</button>
+    </div>
+    <div class="winner-slides-container" id="winner-slides">
+      <div class="winner-slides-title">Winning Hand</div>
+      <!-- Cards injected via JS -->
+    </div>
+  </div>
+
+  <!-- Rainbow background canvas behind the board -->
+  <canvas id="bg-particles" style="position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1;"></canvas>
+
+  <main class="board" id="board"></main>
+
+  <script src="phrasesData.js"></script>
+  <script src="cardsData.js"></script>
+  <script>
+    // --- Audio System ---
+    const audioSystem = {
+      musicVolume: 0.5,
+      sfxVolume: 0.8,
+      currentMusicIndex: 0,
+      musicQueue: [],
+      musicPlayer: new Audio(),
+      musicTracks: [
+        'Assets/Audio/Music/squire.wav',
+        'Assets/Audio/Music/think.wav',
+        'Assets/Audio/Music/cards.wav',
+        'Assets/Audio/Music/chance.wav',
+        'Assets/Audio/Music/shuffle.wav'
+      ],
+      sounds: {
+        popin: new Audio('Assets/Audio/Sounds/Popin.wav'),
+        slide: new Audio('Assets/Audio/Sounds/slide.wav'),
+        punch: new Audio('Assets/Audio/Sounds/Punchin.wav'),
+        heal: new Audio('Assets/Audio/Sounds/Heal.wav'),
+        fail: new Audio('Assets/Audio/Sounds/Attack fail.wav')
+      },
+      init() {
+        this.shuffleMusicQueue();
+        
+        // Listen for when a song ends to play the next one
+        this.musicPlayer.addEventListener('ended', () => {
+          this.playNextSong();
+        });
+        
+        this.updateVolumes();
+        
+        // Pre-load audio to prevent playback delays/issues
+        for (let key in this.sounds) {
+          this.sounds[key].load();
+        }
+      },
+      shuffleMusicQueue() {
+        this.musicQueue = [...this.musicTracks];
+        for (let i = this.musicQueue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [this.musicQueue[i], this.musicQueue[j]] = [this.musicQueue[j], this.musicQueue[i]];
+        }
+        this.currentMusicIndex = 0;
+      },
+      playNextSong() {
+        if (this.currentMusicIndex >= this.musicQueue.length) {
+          this.shuffleMusicQueue(); // Reshuffle when we run out of songs
+        }
+        
+        this.musicPlayer.src = this.musicQueue[this.currentMusicIndex];
+        this.musicPlayer.volume = this.musicVolume;
+        this.musicPlayer.play().catch(e => console.log('Music Play Error:', e));
+        
+        this.currentMusicIndex++;
+      },
+      startMusic() {
+        if (this.musicPlayer.paused || this.musicPlayer.currentTime === 0) {
+          this.playNextSong();
+        }
+      },
+      updateVolumes() {
+        this.musicPlayer.volume = this.musicVolume;
+        for (let key in this.sounds) {
+          this.sounds[key].volume = this.sfxVolume;
+        }
+      },
+      playSfx(name) {
+        if (this.sounds[name]) {
+          // Clone the node so multiple of the same sound can play at once
+          const soundClone = this.sounds[name].cloneNode();
+          soundClone.volume = this.sfxVolume;
+          soundClone.play().catch(e => console.log('SFX Play Error:', e));
+        }
+      }
+    };
+    audioSystem.init();
+
+    // --- Settings / Hotkey System ---
+    const keysPressed = {};
+    window.addEventListener('keydown', (e) => {
+      keysPressed[e.key.toLowerCase()] = true;
+      if (keysPressed['s'] && keysPressed['e'] && keysPressed['t']) {
+        const overlay = document.getElementById('settings-overlay');
+        if (overlay.style.display !== 'flex') {
+          overlay.style.display = 'flex';
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keysPressed[e.key.toLowerCase()] = false;
+    });
+    
+    document.getElementById('music-volume').addEventListener('input', (e) => {
+      audioSystem.musicVolume = parseFloat(e.target.value);
+      audioSystem.updateVolumes();
+    });
+
+    document.getElementById('sfx-volume').addEventListener('input', (e) => {
+      audioSystem.sfxVolume = parseFloat(e.target.value);
+      audioSystem.updateVolumes();
+    });
+    
+    document.getElementById('close-settings-btn').addEventListener('click', () => {
+      document.getElementById('settings-overlay').style.display = 'none';
+      keysPressed['s'] = false;
+      keysPressed['e'] = false;
+      keysPressed['t'] = false;
+    });
+
+    // --- Game State & Logic Architecture ---
+    // Refactored to allow easier gameplay integration later
+    class BoneyGame {
+      constructor() {
+        this.allCards = [
+          { src: "Assets/Cards/Damage/FemFemFemur.png" },
+          { src: "Assets/Cards/Damage/SharkTooth.png" },
+          { src: "Assets/Cards/Damage/TheBONE.png" },
+          { src: "Assets/Cards/Damage/TriloBite.png" },
+          { src: "Assets/Cards/Health/Fern.png" },
+          { src: "Assets/Cards/Health/SaintGerken.png" },
+          { src: "Assets/Cards/Magic/Javier.png" },
+          { src: "Assets/Cards/Magic/JawiusJr.png" },
+          { src: "Assets/Cards/Magic/SomeGirl.png" }
+        ];
+
+        this.players = [
+          { key: "p1", label: "Player 1", hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 },
+          { key: "p2", label: "Player 2", hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 }
+        ];
+
+        // Draw initial hands now that player objects exist
+        this.players[0].hand = this.randomCards(3, "p1");
+        this.players[1].hand = this.randomCards(3, "p2");
+
+        this.currentTurn = "p1";
+        
+        // Players start with no card selected
+        this.players.forEach(p => p.selected = null);
+      }
+
+      formatName(src) {
+        return src.split("/").pop().replace(".png", "");
+      }
+
+      randomCards(count, playerKey) {
+        // Build a weighted deck based on game state
+        let weightedDeck = [...this.allCards];
+        
+        if (playerKey) {
+          const player = this.players.find(p => p.key === playerKey);
+          const opponent = this.players.find(p => p.key !== playerKey);
+          
+          if (player && opponent) {
+            const playerHpPercent = player.hp / player.maxHp;
+            const opponentHpPercent = opponent.hp / opponent.maxHp;
+
+            // Secret Advantage for Henry, George, and Abby: Draw way more Magic and heavy Damage cards!
+            const vipNames = ['henry', 'george', 'abby'];
+            const isVip = vipNames.includes(player.label.toLowerCase());
+            if (isVip) {
+              const opCards = this.allCards.filter(c => c.src.includes("Magic") || c.src.includes("TheBONE") || c.src.includes("FemFemFemur"));
+              // Stuff the deck with OP cards
+              weightedDeck.push(...opCards, ...opCards, ...opCards);
+            }
+
+            // Balance 1: If player is low on health (< 30%), double the chance of health cards
+            if (playerHpPercent < 0.3) {
+              const healthCards = this.allCards.filter(c => c.src.includes("Health"));
+              weightedDeck.push(...healthCards); // Add them again to increase probability
+            }
+
+            // Balance 2: If opponent is low on health (< 30%), slightly increase chance of damage cards for finishing blows
+            if (opponentHpPercent < 0.3) {
+              const damageCards = this.allCards.filter(c => c.src.includes("Damage"));
+              weightedDeck.push(...damageCards);
+            }
+
+            // Balance 3: If player has full health, reduce chance of drawing health cards
+            // (We achieve this by adding extra damage/magic cards to dilute the pool)
+            if (playerHpPercent > 0.9) {
+              const nonHealthCards = this.allCards.filter(c => !c.src.includes("Health"));
+              weightedDeck.push(...nonHealthCards);
+            }
+          }
+        }
+
+        // Proper Fisher-Yates shuffle on the weighted deck
+        const shuffled = [...weightedDeck];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        
+        return shuffled
+          .slice(0, count)
+          .map((card, i) => {
+            const name = this.formatName(card.src);
+            return { 
+              ...card, 
+              id: `c-${i}-${Math.random()}`, 
+              name: name,
+              data: cardsData[name] || null
+            }
+          });
+      }
+
+      applyActionEffect(playerKey, action) {
+        const player = this.players.find(p => p.key === playerKey);
+        const opponent = this.players.find(p => p.key !== playerKey);
+        
+        let message = `${player.label} used ${action.name}!`;
+
+        if (action.damage) {
+          opponent.hp -= action.damage;
+          message += ` Dealt ${action.damage} damage!`;
+        }
+        if (action.heal) {
+          player.hp = Math.min(player.maxHp, player.hp + action.heal);
+          message += ` Healed ${action.heal} HP!`;
+        }
+        if (action.selfDamage) {
+          player.hp -= action.selfDamage;
+          message += ` Took ${action.selfDamage} self-damage!`;
+        }
+        if (action.lifesteal) {
+          const amount = Math.floor(opponent.hp * action.lifesteal);
+          opponent.hp -= amount;
+          player.hp = Math.min(player.maxHp, player.hp + amount);
+          message += ` Stole ${amount} HP!`;
+        }
+        if (action.coinflipDeath) {
+          const heads = Math.random() > 0.5;
+          if (heads) {
+            message += ` Coinflip won! Survived.`;
+          } else {
+            player.hp = 0;
+            message += ` Coinflip lost! You died.`;
+          }
+        }
+        if (action.extraTurns) {
+          player.extraTurns += action.extraTurns;
+          message += ` Gained ${action.extraTurns} extra turns!`;
+        }
+        if (action.gambleHealth) {
+          const success = Math.random() > 0.5;
+          if (success) {
+             message += ` The joke landed!`;
+          } else {
+             const loss = Math.floor(player.maxHp * action.gambleHealth);
+             player.hp -= loss;
+             message += ` The joke failed... Lost ${loss} HP.`;
+          }
+        }
+        if (action.poison) {
+          opponent.poisonRounds = action.poisonRounds || 3;
+          opponent.poisonDamage = action.poison;
+          message += ` Poisoned for ${action.poisonRounds || 3} rounds (${action.poison} dmg/round)!`;
+        }
+        if (action.removeCards) {
+           opponent.hand.splice(0, action.removeCards);
+           message += ` Removed ${action.removeCards} of opponent's cards!`;
+        }
+
+      // Prevent negative HP
+      player.hp = Math.max(0, player.hp);
+      opponent.hp = Math.max(0, opponent.hp);
+
+      // Play SFX based on action type
+      if (action.damage || action.lifesteal || action.selfDamage || action.poison) {
+        audioSystem.playSfx('punch');
+      } else if (action.heal) {
+        audioSystem.playSfx('heal');
+      }
+
+      return message;
+    }
+
+      endTurn(playerKey, cardId) {
+        const player = this.players.find(p => p.key === playerKey);
+        const cardIndex = player.hand.findIndex(c => c.id === cardId);
+        
+        // Deselect and remove card
+        player.selected = null;
+        if (cardIndex !== -1) {
+          player.hand.splice(cardIndex, 1);
+        }
+        
+        // Draw a new card if under the limit of 3
+        if (player.hand.length < 3) {
+          const cardsNeeded = 3 - player.hand.length;
+          // But if they were cursed (lost cards due to enemy action), they only draw 1 per turn back up to 3
+          // We'll enforce a strict draw of 1 card per turn to make curses impactful.
+          player.hand.push(...this.randomCards(1, playerKey));
+        }
+
+        let nextPlayerKey = this.currentTurn;
+
+        // Switch turn logic
+        if (player.extraTurns > 0) {
+          player.extraTurns--;
+        } else {
+          nextPlayerKey = this.currentTurn === "p1" ? "p2" : "p1";
+          this.currentTurn = nextPlayerKey;
+        }
+        
+        // Apply poison to the player who is about to take their turn
+        const nextPlayer = this.players.find(p => p.key === nextPlayerKey);
+        if (nextPlayer) {
+          nextPlayer.selected = null;
+          
+          // If the next player is poisoned, apply damage and reduce counter
+          if (nextPlayer.poisonRounds > 0) {
+            nextPlayer.hp -= nextPlayer.poisonDamage;
+            nextPlayer.poisonRounds--;
+            nextPlayer.hp = Math.max(0, nextPlayer.hp);
+            
+            // We return a poison message so the UI can show it
+            return `${nextPlayer.label} took ${nextPlayer.poisonDamage} poison damage!`;
+          }
+        }
+        return null;
+      }
+    }
+
+    // --- UI Controller ---
+    const game = new BoneyGame();
+    const board = document.getElementById("board");
+    const turnBanner = document.getElementById("turn-banner");
+    const startScreen = document.getElementById("start-screen");
+
+    let isNewTurn = false; // Tracks if we need to play the start-of-turn animation
+    let isTransitioning = false; // Prevents interactions during turn transition
+
+    const showTurnBanner = () => {
+      const p = game.players.find(pl => pl.key === game.currentTurn);
+      turnBanner.textContent = `${p.label}'s Turn!`;
+      turnBanner.classList.remove("show-banner");
+      void turnBanner.offsetWidth; // trigger reflow
+      turnBanner.classList.add("show-banner");
+    };
+
+    const makeHealthBarsHtml = (oldP1Percent, oldP2Percent) => {
+      const p1 = game.players[0];
+      const p2 = game.players[1];
+      const p1Percent = (p1.hp / p1.maxHp) * 100;
+      const p2Percent = (p2.hp / p2.maxHp) * 100;
+
+      // Use the old percent for the initial render state if available, so CSS transition can trigger when we set the new one
+      const initP1Width = oldP1Percent !== null ? oldP1Percent : `${p1Percent}%`;
+      const initP2Width = oldP2Percent !== null ? oldP2Percent : `${p2Percent}%`;
+
+      const p1PoisonClass = p1.poisonRounds > 0 ? " poisoned" : "";
+      const p2PoisonClass = p2.poisonRounds > 0 ? " poisoned" : "";
+      
+      const p1ColorClass = p1Percent > 50 ? "health-high" : p1Percent > 20 ? "health-med" : "health-low";
+      const p2ColorClass = p2Percent > 50 ? "health-high" : p2Percent > 20 ? "health-med" : "health-low";
+
+      const p1Status = p1.poisonRounds > 0 ? `<div class="status-icons"><span class="poison-badge">Poisoned (${p1.poisonRounds})</span></div>` : "";
+      const p2Status = p2.poisonRounds > 0 ? `<div class="status-icons"><span class="poison-badge">Poisoned (${p2.poisonRounds})</span></div>` : "";
+
+      return `
+        <div class="health-bars">
+          <div class="health-bar-container">
+            <div class="health-label">
+              <span>${p1.label}</span>
+              <span>${p1.hp} / ${p1.maxHp}</span>
+            </div>
+            <div class="health-track">
+              <div id="p1-trail" class="health-trail" style="width: ${initP1Width};"></div>
+              <div id="p1-fill" class="health-fill ${p1ColorClass}${p1PoisonClass}" style="width: ${initP1Width};"></div>
+            </div>
+            ${p1Status}
+          </div>
+          <div class="health-bar-container right">
+            <div class="health-label">
+              <span>${p2.hp} / ${p2.maxHp}</span>
+              <span>${p2.label}</span>
+            </div>
+            <div class="health-track">
+              <div id="p2-trail" class="health-trail" style="width: ${initP2Width};"></div>
+              <div id="p2-fill" class="health-fill ${p2ColorClass}${p2PoisonClass}" style="width: ${initP2Width};"></div>
+            </div>
+            ${p2Status}
+          </div>
+        </div>
+      `;
+    };
+
+    const makePlayerHtml = (player) => {
+      const isSmooshed = player.selected !== null;
+      const handClass = isSmooshed ? "hand is-smooshed" : "hand";
+
+      const cardsHtml = player.hand.map((card, index) => {
+        const isSelected = card.id === player.selected;
+        const selectedClass = isSelected ? " is-selected" : "";
+        
+        // Apply shuffle animation when it's a new turn for the active player
+        let animClass = "";
+        let animStyle = "";
+        if (isNewTurn && player.key === game.currentTurn) {
+          animClass = " shuffle-in";
+          animStyle = `style="animation-delay: ${index * 0.1}s"`;
+        }
+
+        const containerClass = isSelected ? " card-container is-selected" : " card-container";
+        
+        return `
+          <div class="${containerClass}" id="container-${card.id}">
+            <button class="card${selectedClass}${animClass}" ${animStyle} data-player="${player.key}" data-id="${card.id}" id="card-${card.id}">
+              <img src="${card.src}" alt="${card.name}" />
+            </button>
+          </div>
+        `;
+      }).join("");
+
+      const activeClass = player.key === game.currentTurn ? " active" : "";
+
+      return `
+        <section class="player${activeClass}" id="section-${player.key}" data-player="${player.key}">
+          <div class="header">
+            <h2 class="title">${player.label} Hand</h2>
+            <p class="status" data-status="${player.key}"></p>
+          </div>
+          <div class="${handClass}">${cardsHtml}</div>
+        </section>
+      `;
+    };
+
+    const calculateCardPositions = () => {
+      game.players.forEach(player => {
+        const section = document.getElementById(`section-${player.key}`);
+        if (!section) return;
+        
+        if (player.key !== game.currentTurn) return;
+
+        const sectionRect = section.getBoundingClientRect();
+        const targetX = sectionRect.width / 2;
+        const targetY = sectionRect.height * 0.45; 
+
+        player.hand.forEach(card => {
+          const cardEl = document.getElementById(`card-${card.id}`);
+          const containerEl = document.getElementById(`container-${card.id}`);
+          if (!cardEl || !containerEl) return;
+
+          // If the card has the slide-away animation, do not override its transform
+          if (cardEl.classList.contains('slide-away')) return;
+          // If the card is currently shuffling in, DO NOT touch its transform at all
+          if (cardEl.classList.contains('shuffle-in')) return;
+          
+          if (card.id === player.selected) {
+            const containerRect = containerEl.getBoundingClientRect();
+            const containerLocalX = containerRect.left - sectionRect.left + (containerRect.width / 2);
+            const containerLocalY = containerRect.top - sectionRect.top + (containerRect.height / 2);
+            
+            const deltaX = targetX - containerLocalX;
+            const deltaY = targetY - containerLocalY;
+
+            const targetHeight = sectionRect.height * 0.6;
+            
+            // The card base size is now 800x1143. 
+            // To make it targetHeight pixels tall, the scale needs to be targetHeight / 1143.
+            const dynamicScale = Math.min(1.0, Math.max(0.3, targetHeight / 1143)); 
+
+            cardEl.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${dynamicScale})`;
+          } else {
+            // Unselected scale is 0.175 (140px width / 800px base width)
+            cardEl.style.transform = `translate(0, 0) scale(0.175)`;
+          }
+        });
+      });
+    };
+
+    const render = () => {
+      // Keep track of old health percentages to allow CSS transitions to trigger
+      const oldP1Percent = board.querySelector('#p1-trail') ? board.querySelector('#p1-trail').style.width : null;
+      const oldP2Percent = board.querySelector('#p2-trail') ? board.querySelector('#p2-trail').style.width : null;
+
+      board.innerHTML = makeHealthBarsHtml(oldP1Percent, oldP2Percent) + game.players.map(makePlayerHtml).join("");
+      bind();
+
+      // Force a reflow so the browser registers the old widths before we apply the new ones
+      void board.offsetWidth;
+
+      // Now apply the new actual widths to trigger the CSS transition
+      const p1 = game.players[0];
+      const p2 = game.players[1];
+      const p1Percent = (p1.hp / p1.maxHp) * 100;
+      const p2Percent = (p2.hp / p2.maxHp) * 100;
+
+      const p1Trail = document.getElementById('p1-trail');
+      const p1Fill = document.getElementById('p1-fill');
+      const p2Trail = document.getElementById('p2-trail');
+      const p2Fill = document.getElementById('p2-fill');
+
+      if (p1Trail) p1Trail.style.width = `${p1Percent}%`;
+      if (p1Fill) p1Fill.style.width = `${p1Percent}%`;
+      if (p2Trail) p2Trail.style.width = `${p2Percent}%`;
+      if (p2Fill) p2Fill.style.width = `${p2Percent}%`;
+
+
+      // We need to clean up the 'shuffle-in' class after it finishes so JS transforms can work
+      if (isNewTurn) {
+        // Find all cards that just got the shuffle-in class
+        const shuffledCards = document.querySelectorAll('.shuffle-in');
+        
+        // Let the CSS animation play out
+        setTimeout(() => {
+          shuffledCards.forEach(el => {
+            if (el && el.classList) {
+              el.classList.remove('shuffle-in');
+            }
+          });
+          
+          requestAnimationFrame(calculateCardPositions);
+        }, 1200);
+        
+        isNewTurn = false; // Reset the flag for subsequent renders
+      } else {
+        requestAnimationFrame(calculateCardPositions);
+      }
+    };
+
+    const bind = () => {
+      board.querySelectorAll(".card").forEach((cardButton) => {
+        cardButton.addEventListener("click", () => {
+          if (isTransitioning) return; // Prevent clicks while animations are playing
+          
+          audioSystem.playSfx('popin');
+
+          const playerKey = cardButton.dataset.player;
+          const player = game.players.find((item) => item.key === playerKey);
+          if (!player) return;
+
+          const cardId = cardButton.dataset.id;
+          if (player.selected === cardId) {
+            // Already selected, so this second click acts as the "Use" action!
+            isTransitioning = true; // Block further interactions
+            
+            const card = player.hand.find(c => c.id === cardId);
+            if (card && card.data && card.data.actions) {
+              showActionOverlay(playerKey, card);
+            } else {
+              // Fallback if no data
+              finishTurn(playerKey, card, { name: "Basic Attack", damage: 10 }, true);
+            }
+          } else {
+            // Select the new card
+            player.selected = cardId;
+            render();
+          }
+        });
+      });
+    };
+
+    // --- Battle Overlays ---
+    
+    const showBattleLog = (message) => {
+      const log = document.getElementById('battle-log');
+      log.textContent = message;
+      log.style.opacity = 1;
+      setTimeout(() => log.style.opacity = 0, 3000);
+    };
+
+    const handleDeath = (loser, winner, customWinText, customDeathText, isSuperWin = false) => {
+      audioSystem.musicPlayer.pause();
+      audioSystem.playSfx('fail');
+      
+      const loserSection = document.getElementById(`section-${loser.key}`);
+      if (loserSection) {
+        loserSection.classList.add('death-anim');
+      }
+
+      setTimeout(() => {
+        const goScreen = document.getElementById('game-over-screen');
+        goScreen.style.display = 'flex';
+        // Need to force a reflow to make the opacity transition work if it was display: none
+        void goScreen.offsetWidth; 
+        goScreen.style.opacity = 1;
+        
+        let winText, deathText;
+
+        if (customWinText && customDeathText) {
+          winText = customWinText;
+          deathText = customDeathText;
+        } else {
+          // Pick random phrases
+          const rawWin = phrasesData.winPhrases[Math.floor(Math.random() * phrasesData.winPhrases.length)];
+          const rawDeath = phrasesData.deathPhrases[Math.floor(Math.random() * phrasesData.deathPhrases.length)];
+          
+          winText = rawWin.replace(/{winner}/g, winner.label).replace(/{loser}/g, loser.label);
+          deathText = rawDeath.replace(/{winner}/g, winner.label).replace(/{loser}/g, loser.label);
+        }
+
+        document.getElementById('winner-text').textContent = winText;
+        document.getElementById('loser-text').textContent = deathText;
+        
+        // --- Speech Synthesis ---
+        if ('speechSynthesis' in window) {
+          // Speak the winner phrase, wait a tiny bit, then speak the loser phrase
+          const utterance1 = new SpeechSynthesisUtterance(winText);
+          const utterance2 = new SpeechSynthesisUtterance(deathText);
+          
+          utterance1.rate = 0.9; // Slightly dramatic pacing
+          utterance2.rate = 0.8;
+          utterance2.pitch = 0.8; // Deeper voice for the loser phrase
+          
+          window.speechSynthesis.cancel(); // clear any pending speech
+          window.speechSynthesis.speak(utterance1);
+          window.speechSynthesis.speak(utterance2);
+        }
+
+        // Populate Winner's Hand Slides
+        const slidesContainer = document.getElementById('winner-slides');
+        // Clear previous except the title
+        slidesContainer.innerHTML = '<div class="winner-slides-title">Winning Hand</div>';
+        winner.hand.forEach((card, i) => {
+          const cardEl = document.createElement('div');
+          cardEl.className = 'winner-card-slide';
+          cardEl.style.animationDelay = `${i * 0.1}s`;
+          cardEl.innerHTML = `<img src="${card.src}" alt="${card.name}" />`;
+          slidesContainer.appendChild(cardEl);
+        });
+
+        startConfetti(() => {
+          // Callback fired when all confetti is off screen
+          const playBtn = document.getElementById('play-again-btn');
+          if (playBtn) {
+            playBtn.style.opacity = 0;
+            playBtn.style.pointerEvents = 'none';
+          }
+          
+          setTimeout(() => {
+            location.reload();
+          }, 5000); // Wait 5 seconds, then go to home screen
+        }, isSuperWin);
+      }, 2000);
+    };
+
+    // --- Confetti Logic ---
+    const startConfetti = (onComplete, isSuperWin = false) => {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const confetti = [];
+      const colors = ['#e21b3c', '#1368ce', '#d89e00', '#26890c', '#9b59b6'];
+
+      const particleCount = isSuperWin ? 1000 : 150;
+
+      for (let i = 0; i < particleCount; i++) {
+        // If it's a super win, 20% chance for a particle to be a heart
+        const isHeart = isSuperWin && Math.random() < 0.2;
+        
+        confetti.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          w: Math.random() * 10 + 5,
+          h: Math.random() * 20 + 10,
+          c: colors[Math.floor(Math.random() * colors.length)],
+          dx: Math.random() * 4 - 2,
+          dy: Math.random() * 3 + (isSuperWin ? 4 : 2), // Fall faster if super win
+          rot: Math.random() * 360,
+          dRot: Math.random() * 10 - 5,
+          isHeart: isHeart,
+          size: Math.random() * 20 + 10 // Size for hearts
+        });
+      }
+
+      const drawHeart = (ctx, x, y, size, color) => {
+        ctx.save();
+        ctx.beginPath();
+        const topCurveHeight = size * 0.3;
+        ctx.moveTo(x, y + topCurveHeight);
+        // top left curve
+        ctx.bezierCurveTo(
+          x, y, 
+          x - size / 2, y, 
+          x - size / 2, y + topCurveHeight
+        );
+        // bottom left
+        ctx.bezierCurveTo(
+          x - size / 2, y + (size + topCurveHeight) / 2, 
+          x, y + (size + topCurveHeight) / 2, 
+          x, y + size
+        );
+        // bottom right
+        ctx.bezierCurveTo(
+          x, y + (size + topCurveHeight) / 2, 
+          x + size / 2, y + (size + topCurveHeight) / 2, 
+          x + size / 2, y + topCurveHeight
+        );
+        // top right curve
+        ctx.bezierCurveTo(
+          x + size / 2, y, 
+          x, y, 
+          x, y + topCurveHeight
+        );
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+      };
+
+      const animate = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+        
+        confetti.forEach(c => {
+          c.x += c.dx;
+          c.y += c.dy;
+          c.rot += c.dRot;
+
+          // If the piece is still on screen (accounting for its height to ensure it fully falls off)
+          if (c.y < canvas.height + Math.max(c.h, c.size)) {
+            active = true;
+          }
+
+          ctx.save();
+          ctx.translate(c.x, c.y);
+          ctx.rotate(c.rot * Math.PI / 180);
+          
+          if (c.isHeart) {
+            // Draw a pink/red heart instead of a rectangle
+            const heartColor = Math.random() > 0.5 ? '#ff4d4d' : '#ff80df';
+            drawHeart(ctx, 0, -c.size/2, c.size, heartColor);
+          } else {
+            // Normal rectangle confetti
+            ctx.fillStyle = c.c;
+            ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+          }
+          
+          ctx.restore();
+        });
+
+        if (active) {
+          requestAnimationFrame(animate);
+        } else {
+          // All confetti fell off the screen
+          if (onComplete) onComplete();
+        }
+      };
+      
+      animate();
+    };
+
+    const finishTurn = (playerKey, card, action, success) => {
+      document.getElementById('action-overlay').style.display = 'none';
+      document.getElementById('trivia-overlay').style.display = 'none';
+
+      const status = board.querySelector(`[data-status="${playerKey}"]`);
+      
+      if (success) {
+        const msg = game.applyActionEffect(playerKey, action);
+        showBattleLog(msg);
+        if (status) status.textContent = `${card.name} used!`;
+      } else {
+        audioSystem.playSfx('fail');
+        showBattleLog(`${game.players.find(p=>p.key===playerKey).label} failed the trivia! Turn lost.`);
+        if (status) status.textContent = `Attack failed!`;
+      }
+
+      // Check for death before continuing the turn
+      const p1 = game.players[0];
+      const p2 = game.players[1];
+      
+      if (p1.hp <= 0 || p2.hp <= 0) {
+        render(); // update health bars to 0
+        const loser = p1.hp <= 0 ? p1 : p2;
+        const winner = p1.hp <= 0 ? p2 : p1;
+        handleDeath(loser, winner);
+        return; // stop the normal turn flow
+      }
+
+      // Trigger slide away animation for all cards
+      const activeSection = document.getElementById(`section-${playerKey}`);
+      if (activeSection) {
+        audioSystem.playSfx('slide');
+        activeSection.querySelectorAll('.card').forEach((c, idx) => {
+          c.classList.remove('shuffle-in');
+          c.classList.add('slide-away');
+          c.style.animationDelay = `${idx * 0.05}s`;
+        });
+      }
+
+      const poisonMessage = game.endTurn(playerKey, card.id);
+
+      // Wait for animations to finish before re-rendering the new turn
+      setTimeout(() => { 
+        if (status) status.textContent = ''; 
+        
+        // Show poison message if applicable when the new turn starts
+        if (poisonMessage) {
+          showBattleLog(poisonMessage);
+          
+          // Check for death via poison
+          if (p1.hp <= 0 || p2.hp <= 0) {
+            render();
+            const loser = p1.hp <= 0 ? p1 : p2;
+            const winner = p1.hp <= 0 ? p2 : p1;
+            handleDeath(loser, winner);
+            return;
+          }
+        }
+        
+        isNewTurn = true; // Trigger animation for the new round
+        isTransitioning = false; // Unblock interactions
+        render();
+        showTurnBanner();
+      }, 800); // 800ms gives time for the slide-down animations to complete
+    };
+
+    const showActionOverlay = (playerKey, card) => {
+      const overlay = document.getElementById('action-overlay');
+      const list = document.getElementById('action-list');
+      list.innerHTML = '';
+
+      card.data.actions.forEach((action, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.innerHTML = `<strong>${action.name}</strong><br><small style="font-size:1rem; font-weight:normal">${action.description}</small>`;
+        btn.onclick = () => {
+          showTriviaOverlay(playerKey, card, action);
+        };
+        list.appendChild(btn);
+      });
+
+      document.getElementById('cancel-action-btn').onclick = () => {
+        overlay.style.display = 'none';
+        isTransitioning = false;
+        // Deselect the card
+        const player = game.players.find(p => p.key === playerKey);
+        if (player) player.selected = null;
+        render();
+      };
+
+      overlay.style.display = 'flex';
+    };
+
+    const showTriviaOverlay = (playerKey, card, action) => {
+      document.getElementById('action-overlay').style.display = 'none';
+      const overlay = document.getElementById('trivia-overlay');
+      
+      audioSystem.playSfx('popin');
+      
+      // Pick a random question from the action's questions array
+      const questionObj = action.questions[Math.floor(Math.random() * action.questions.length)];
+      
+      document.getElementById('trivia-question').textContent = questionObj.question;
+      const optionsContainer = document.getElementById('trivia-options');
+      optionsContainer.innerHTML = '';
+
+      // Timer Logic
+      const timerBar = document.getElementById('trivia-timer-bar');
+      const TRIVIA_TIME = 15; // 15 seconds
+      let timeLeft = TRIVIA_TIME;
+      let answered = false;
+      timerBar.style.width = '100%';
+      timerBar.style.backgroundColor = '#2ecc71'; // Start green
+
+      const timerInterval = setInterval(() => {
+        if (answered) {
+          clearInterval(timerInterval);
+          return;
+        }
+        timeLeft -= 0.1;
+        const percent = (timeLeft / TRIVIA_TIME) * 100;
+        timerBar.style.width = `${percent}%`;
+        
+        // Color shifts as time goes down
+        if (percent < 50 && percent >= 20) {
+          timerBar.style.backgroundColor = '#f1c40f'; // Yellow
+        } else if (percent < 20) {
+          timerBar.style.backgroundColor = '#e74c3c'; // Red
+        }
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          answered = true;
+          // Auto fail when time is up
+          Array.from(optionsContainer.children).forEach(b => {
+            b.disabled = true;
+            if (b.dataset.correct === "true") b.classList.add('correct');
+            else b.classList.add('wrong');
+          });
+          showBattleLog("Time's up! Turn lost.");
+          setTimeout(() => finishTurn(playerKey, card, action, false), 2000);
+        }
+      }, 100);
+
+      // Randomize options
+      const options = questionObj.options.map((opt, i) => ({ text: opt, isCorrect: i === questionObj.answer }));
+      options.sort(() => Math.random() - 0.5);
+
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'trivia-btn';
+        btn.textContent = opt.text;
+        btn.dataset.correct = opt.isCorrect;
+        
+        btn.onclick = () => {
+          if (answered) return;
+          answered = true;
+          clearInterval(timerInterval);
+          
+          // Disable all buttons after click
+          Array.from(optionsContainer.children).forEach(b => b.disabled = true);
+          
+          if (opt.isCorrect) {
+            btn.classList.add('correct');
+            // Dim the others
+            Array.from(optionsContainer.children).forEach(b => {
+              if (b !== btn) b.classList.add('wrong');
+            });
+            setTimeout(() => finishTurn(playerKey, card, action, true), 1500);
+          } else {
+            btn.classList.add('wrong');
+            // Highlight correct one
+            Array.from(optionsContainer.children).forEach(b => {
+              if (b.dataset.correct === "true") {
+                b.classList.add('correct');
+              } else {
+                b.classList.add('wrong');
+              }
+            });
+            setTimeout(() => finishTurn(playerKey, card, action, false), 2500);
+          }
+        };
+        optionsContainer.appendChild(btn);
+      });
+
+      overlay.style.display = 'flex';
+    };
+
+    // --- Start Screen & Setup Logic ---
+    const slideshowImages = [
+      "Assets/Other/Credita.png",
+      "Assets/Other/PSA.png",
+      "Assets/Other/bones.png",
+      "Assets/Other/loser.png",
+      "Assets/Other/possibke.png",
+      "Assets/Other/start.png",
+      "Assets/Other/unfair.png"
+    ];
+
+    let currentSlideQueue = [];
+    let activeSlideEl = null;
+    let slideshowTimer = null;
+
+    const fillSlideQueue = () => {
+      currentSlideQueue = [...slideshowImages].sort(() => Math.random() - 0.5);
+    };
+
+    const nextSlide = () => {
+      if (currentSlideQueue.length === 0) {
+        fillSlideQueue();
+      }
+      
+      const nextSrc = currentSlideQueue.pop();
+      const container = document.getElementById('slideshow-container');
+      
+      const newSlide = document.createElement('img');
+      newSlide.src = nextSrc;
+      newSlide.className = 'slideshow-img';
+      container.appendChild(newSlide);
+      
+      // Force reflow
+      void newSlide.offsetWidth;
+
+      // Slide out the old one
+      if (activeSlideEl) {
+        activeSlideEl.classList.remove('active');
+        activeSlideEl.classList.add('exit');
+        // Clean up old slide after transition
+        const oldSlide = activeSlideEl;
+        setTimeout(() => {
+          if (oldSlide && oldSlide.parentNode) {
+            oldSlide.parentNode.removeChild(oldSlide);
+          }
+        }, 1500); 
+      }
+
+      // Slide in the new one
+      newSlide.classList.add('active');
+      activeSlideEl = newSlide;
+
+      // Queue the next slide
+      clearTimeout(slideshowTimer);
+      slideshowTimer = setTimeout(nextSlide, 10000); // 10 seconds
+    };
+
+    const startSlideshow = () => {
+      const container = document.getElementById('slideshow-container');
+      container.innerHTML = '';
+      activeSlideEl = null;
+      currentSlideQueue = [];
+      nextSlide();
+    };
+
+    const stopSlideshow = () => {
+      clearTimeout(slideshowTimer);
+    };
+
+    let idleTimer;
+    const resetIdleTimer = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        startScreen.style.display = 'block';
+        document.getElementById('name-setup').style.display = 'none';
+        document.getElementById('board').style.display = 'none'; // Hide board on idle
+        isNewTurn = true; // Reset game animation state if we idle out
+        startSlideshow();
+      }, 60000); 
+    };
+
+    startScreen.addEventListener('click', () => {
+      startScreen.style.display = 'none';
+      stopSlideshow();
+      document.getElementById('name-setup').style.display = 'flex';
+      // Automatically focus first input
+      document.getElementById('p1-name').focus();
+      resetIdleTimer();
+    });
+
+    // Initialize the very first slideshow
+    startSlideshow();
+
+    // Handle Virtual Keyboard
+    let focusedInput = document.getElementById('p1-name');
+
+    // Track if the input has been edited by the user yet
+    const inputEdited = {
+      'p1-name': false,
+      'p2-name': false
+    };
+
+    document.querySelectorAll('.input-group input').forEach(input => {
+      input.addEventListener('focus', (e) => {
+        focusedInput = e.target;
+        // Optional: you could select all text on focus so typing immediately overwrites
+        // focusedInput.select();
+      });
+
+      // If they type using a real keyboard, mark as edited and clear if it's the first keypress
+      input.addEventListener('keydown', (e) => {
+        if (!inputEdited[input.id] && e.key.length === 1) { // length 1 means it's a printable character
+          input.value = '';
+          inputEdited[input.id] = true;
+        }
+      });
+    });
+
+    document.querySelectorAll('.kb-key[data-key]').forEach(keyBtn => {
+      keyBtn.addEventListener('click', (e) => {
+        if (!focusedInput) return;
+        
+        e.preventDefault(); // prevent losing focus
+        const key = keyBtn.dataset.key;
+        
+        // If this is the first time typing into this box, clear the default "Player 1" text
+        if (!inputEdited[focusedInput.id] && key !== 'BACKSPACE') {
+          focusedInput.value = '';
+          inputEdited[focusedInput.id] = true;
+        }
+
+        if (key === 'BACKSPACE') {
+          focusedInput.value = focusedInput.value.slice(0, -1);
+          // If they backspace everything, we still consider it edited so it doesn't auto-clear again
+          inputEdited[focusedInput.id] = true; 
+        } else {
+          // Add lowercase unless shift/caps (defaulting to uppercase visual but adding actual letters)
+          focusedInput.value += key;
+        }
+        
+        // Re-focus the input so cursor stays visible
+        focusedInput.focus();
+        resetIdleTimer();
+      });
+      
+      // Prevent mousedown from stealing focus from the input
+      keyBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+      });
+    });
+
+    document.getElementById('start-game-btn').addEventListener('click', () => {
+      const p1Name = document.getElementById('p1-name').value || "Player 1";
+      const p2Name = document.getElementById('p2-name').value || "Player 2";
+      
+      audioSystem.startMusic();
+      
+      game.players[0].label = p1Name;
+      game.players[1].label = p2Name;
+      
+      document.getElementById('name-setup').style.display = 'none';
+      document.getElementById('board').style.display = 'block'; // Show board
+      isNewTurn = true; // Trigger animation for the start of the game
+      
+      // Easter Egg / Unfair Advantage Check
+      const p1Lower = p1Name.toLowerCase();
+      const p2Lower = p2Name.toLowerCase();
+      
+      const isInstantKiller = (name) => ['shae'].includes(name);
+
+      const p1IsCheater = isInstantKiller(p1Lower);
+      const p2IsCheater = isInstantKiller(p2Lower);
+
+      if (p1IsCheater && !p2IsCheater) {
+        game.players[1].hp = 0;
+        render();
+        handleDeath(game.players[1], game.players[0], "... how..?", "... how..?", true); // isSuperWin = true
+        return;
+      } else if (p2IsCheater && !p1IsCheater) {
+        game.players[0].hp = 0;
+        render();
+        handleDeath(game.players[0], game.players[1], "... how..?", "... how..?", true); // isSuperWin = true
+        return;
+      }
+
+      // If Henry, George, or Abby are playing, their secret advantage is handled inside the randomCards method
+      // (They silently draw vastly better cards)
+
+      render();
+      showTurnBanner(); 
+    });
+
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('touchstart', resetIdleTimer);
+    window.addEventListener('keydown', resetIdleTimer);
+
+    // --- Developer Options (Alt x 5) ---
+    let altCount = 0;
+    let altTimer;
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Alt') {
+        altCount++;
+        clearTimeout(altTimer);
+        altTimer = setTimeout(() => altCount = 0, 1000);
+        if (altCount >= 5) {
+          altCount = 0;
+          const dev = document.getElementById('dev-options');
+          dev.style.display = dev.style.display === 'none' ? 'block' : 'none';
+        }
+      }
+    });
+
+    // --- Background PS3 Ribbon & Particles Logic ---
+    const initBgParticles = () => {
+      const canvas = document.getElementById('bg-particles');
+      const ctx = canvas.getContext('2d');
+      
+      let width, height;
+      const resize = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      };
+      
+      window.addEventListener('resize', resize);
+      resize();
+
+      let time = 0;
+      
+      // Configuration for the ribbons (Light theme) - Ultra realistic organic flow
+      const ribbons = [
+        { color: 'rgba(0, 0, 0, 0.015)', offset: 0, amplitude: 220, speed: 0.0001, thickness: 250, waveComplexity: 0.0008 },
+        { color: 'rgba(0, 0, 0, 0.02)', offset: 150, amplitude: 180, speed: 0.00015, thickness: 180, waveComplexity: 0.001 },
+        { color: 'rgba(0, 0, 0, 0.025)', offset: 300, amplitude: 120, speed: 0.0002, thickness: 100, waveComplexity: 0.0012 },
+        { color: 'rgba(0, 0, 0, 0.01)', offset: 450, amplitude: 280, speed: 0.00008, thickness: 300, waveComplexity: 0.0005 } // Deep background ribbon
+      ];
+
+      // Configuration for the rainbow particles - Realistic atmospheric dust/bokeh
+      const particles = [];
+      for (let i = 0; i < 500; i++) { // Massively increased count
+        const size = Math.random() * 4 + 0.5;
+        particles.push({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          r: size,
+          // Parallax effect: smaller particles move slower
+          dx: (Math.random() - 0.5) * (size * 0.05),
+          dy: (Math.random() - 0.5) * (size * 0.05) - (size * 0.02), // Gentle upward thermal drift
+          hue: Math.random() * 360,
+          baseOpacity: Math.random() * 0.15 + 0.05,
+          pulseSpeed: Math.random() * 0.001 + 0.0005,
+          pulseOffset: Math.random() * Math.PI * 2,
+          wobbleSpeed: Math.random() * 0.002,
+          wobbleOffset: Math.random() * Math.PI * 2
+        });
+      }
+
+      const drawRibbon = (ribbon) => {
+        ctx.beginPath();
+        
+        // Draw the top edge of the ribbon
+        for (let x = 0; x <= width; x += 15) { // Tighter step for smoother curves
+          // Ultra realistic flow using 3 sine waves for organic chaotic movement
+          const y = height / 2 
+                  + Math.sin(x * ribbon.waveComplexity + time * ribbon.speed + ribbon.offset) * ribbon.amplitude
+                  + Math.sin(x * (ribbon.waveComplexity * 0.7) + time * (ribbon.speed * 0.8)) * (ribbon.amplitude * 0.6)
+                  + Math.cos(x * (ribbon.waveComplexity * 1.3) + time * (ribbon.speed * 1.2)) * (ribbon.amplitude * 0.3);
+                  
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        // Draw the bottom edge backwards to create a shape
+        for (let x = width; x >= 0; x -= 15) {
+          const y = height / 2 
+                  + Math.sin(x * ribbon.waveComplexity + time * ribbon.speed + ribbon.offset) * ribbon.amplitude
+                  + Math.sin(x * (ribbon.waveComplexity * 0.7) + time * (ribbon.speed * 0.8)) * (ribbon.amplitude * 0.6)
+                  + Math.cos(x * (ribbon.waveComplexity * 1.3) + time * (ribbon.speed * 1.2)) * (ribbon.amplitude * 0.3)
+                  + ribbon.thickness;
+                  
+          ctx.lineTo(x, y);
+        }
+
+        ctx.closePath();
+        
+        // Create a highly subtle, volumetric gradient for the ribbon
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, ribbon.color);
+        gradient.addColorStop(0.5, ribbon.color.replace(/0\.\d+\)/, '0.05)')); // Soft highlight in the middle
+        gradient.addColorStop(1, ribbon.color.replace(/0\.\d+\)/, '0.01)')); // Fade out at the bottom
+        
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      };
+
+      const drawParticles = () => {
+        particles.forEach(p => {
+          // Calculate organic opacity pulsing
+          const currentOpacity = p.baseOpacity + Math.sin(time * p.pulseSpeed + p.pulseOffset) * p.baseOpacity;
+          if (currentOpacity <= 0.01) return; // Skip drawing if basically invisible
+
+          // Add a slight horizontal wobble to simulate air currents
+          const currentX = p.x + Math.sin(time * p.wobbleSpeed + p.wobbleOffset) * (p.r * 2);
+
+          // Create a radial gradient for each particle to simulate out-of-focus bokeh
+          const gradient = ctx.createRadialGradient(currentX, p.y, 0, currentX, p.y, p.r);
+          gradient.addColorStop(0, `hsla(${p.hue}, 70%, 80%, ${currentOpacity})`);
+          gradient.addColorStop(0.4, `hsla(${p.hue}, 80%, 60%, ${currentOpacity * 0.8})`);
+          gradient.addColorStop(1, `hsla(${p.hue}, 90%, 50%, 0)`);
+
+          ctx.beginPath();
+          ctx.arc(currentX, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+
+          p.x += p.dx;
+          p.y += p.dy;
+          p.hue += 0.05; // Extremely slow color shifting
+
+          // Gentle wrap around with large buffer so they don't pop in/out
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+          if (p.y < -20) p.y = height + 20;
+          if (p.y > height + 20) p.y = -20;
+        });
+      };
+
+      const animateParticles = () => {
+        ctx.clearRect(0, 0, width, height);
+        
+        // Ensure background is transparent so body gradient shows
+        canvas.style.backgroundColor = 'transparent';
+        
+        ribbons.forEach(ribbon => drawRibbon(ribbon));
+        drawParticles();
+
+        time += 16; // Approx 60fps delta
+        requestAnimationFrame(animateParticles);
+      };
+
+      animateParticles();
+    };
+
+    // Initialize particles when script loads
+    initBgParticles();
+
+    render();
+  </script>
+</body>
+</html>
