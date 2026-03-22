@@ -17,6 +17,9 @@
       --line: #e0e0e0;
       --text: #111111;
       --text-dim: #666666;
+      --p1-accent-rgb: 102, 214, 255;
+      --p2-accent-rgb: 255, 126, 169;
+      --active-accent-rgb: 102, 214, 255;
     }
 
     * {
@@ -28,10 +31,149 @@
     body {
       margin: 0;
       height: 100vh;
-      background: radial-gradient(circle at center, #ffffff, #e0e0e0);
+      background: radial-gradient(circle at center, #ffffff, #e6e6e6);
       color: var(--text);
       overflow: hidden;
       touch-action: none;
+    }
+
+    /* Animated active player background tints */
+    body::before, body::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0;
+    }
+
+    body::before {
+      background: radial-gradient(circle at 30% 30%, rgba(var(--p1-accent-rgb), 0.35) 0%, rgba(var(--p1-accent-rgb), 0.05) 80%);
+      animation: bgBreathe 8s ease-in-out infinite alternate;
+    }
+
+    body::after {
+      background: radial-gradient(circle at 70% 70%, rgba(var(--p2-accent-rgb), 0.35) 0%, rgba(var(--p2-accent-rgb), 0.05) 80%);
+      animation: bgBreathe 8s ease-in-out infinite alternate-reverse;
+    }
+
+    /* Setup Screen Spinning Gradient */
+    .setup-bg-gradient {
+      position: absolute;
+      inset: -50%;
+      z-index: -3;
+      background: conic-gradient(from 0deg, rgba(var(--p1-accent-rgb), 0.15) 0%, rgba(var(--p2-accent-rgb), 0.15) 50%, rgba(var(--p1-accent-rgb), 0.15) 100%);
+      animation: spinGradient 20s linear infinite;
+      transition: opacity 1.2s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    body[data-screen="setup"] .setup-bg-gradient {
+      opacity: 1;
+    }
+
+    @keyframes spinGradient {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes bgBreathe {
+      0% { transform: scale(1); filter: brightness(1); }
+      100% { transform: scale(1.05); filter: brightness(1.2); }
+    }
+
+    /* Dramatic Turn Wave Expansion */
+    .turn-wave {
+      position: absolute;
+      width: 150vmax;
+      height: 150vmax;
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      pointer-events: none;
+      z-index: -1;
+      opacity: 0.6;
+      transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1), opacity 1.2s ease-out;
+    }
+    .turn-wave.animate {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0;
+    }
+
+    body[data-active="p1"]::before { opacity: 1; }
+    body[data-active="p2"]::after { opacity: 1; }
+
+    /* Shae Theme Overrides */
+    body.shae-theme {
+      background: radial-gradient(circle at center, #2d003b, #0f0014);
+      --text: #fff0fc;
+      --text-dim: #d896ff;
+      --line: #702082;
+    }
+    body.shae-theme .health-bars {
+      background: rgba(45, 0, 59, 0.6);
+      border-bottom: 2px solid #a332c2;
+    }
+
+    /* Jurassic Theme Overrides */
+    body.jurassic-theme {
+      background: radial-gradient(circle at center, #1e3319, #0a1405);
+      --text: #e6ffcc;
+      --text-dim: #99cc66;
+      --line: #336600;
+    }
+    body.jurassic-theme .health-bars {
+      background: rgba(30, 51, 25, 0.6);
+      border-bottom: 2px solid #4d9900;
+    }
+
+    /* Tech Theme Overrides */
+    body.tech-theme {
+      background: radial-gradient(circle at center, #001f3f, #000000);
+      --text: #00ffcc;
+      --text-dim: #00cc99;
+      --line: #00664d;
+    }
+    body.tech-theme .health-bars {
+      background: rgba(0, 31, 63, 0.6);
+      border-bottom: 2px solid #00ffcc;
+    }
+
+    /* Art Theme Overrides */
+    body.art-theme {
+      background: radial-gradient(circle at center, #fff0f5, #e6f7ff);
+      --text: #ff0066;
+      --text-dim: #0066ff;
+      --line: #ffcc00;
+    }
+    body.art-theme .health-bars {
+      background: rgba(255, 240, 245, 0.6);
+      border-bottom: 2px solid #ff0066;
+    }
+
+    /* Basketball Theme Overrides */
+    body.basketball-theme {
+      background: radial-gradient(circle at center, #4d2600, #1a0d00);
+      --text: #ff9933;
+      --text-dim: #cc6600;
+      --line: #993300;
+    }
+    body.basketball-theme .health-bars {
+      background: rgba(77, 38, 0, 0.6);
+      border-bottom: 2px solid #ff6600;
+    }
+
+    /* TikTok Theme Overrides */
+    body.tiktok-theme {
+      background: radial-gradient(circle at center, #111111, #000000);
+      --text: #ffffff;
+      --text-dim: #69c9d0;
+      --line: #ee1d52;
+    }
+    body.tiktok-theme .health-bars {
+      background: rgba(17, 17, 17, 0.6);
+      border-bottom: 2px solid #69c9d0;
     }
 
     .board {
@@ -162,6 +304,25 @@
       font-size: 1.8rem;
       font-weight: bold;
       text-transform: uppercase;
+    }
+
+    .name-accent {
+      color: #111111;
+      -webkit-text-stroke: 0px; /* Removing stroke to stop internal glitches */
+      text-shadow:
+        -1px -1px 0 var(--name-accent, #ffffff),
+        1px -1px 0 var(--name-accent, #ffffff),
+        -1px 1px 0 var(--name-accent, #ffffff),
+        1px 1px 0 var(--name-accent, #ffffff),
+        0 0 12px var(--name-accent, #ffffff),
+        0 3px 10px rgba(0, 0, 0, 0.35);
+      letter-spacing: 0.02em;
+    }
+
+    @keyframes accentBreathe {
+      0% { opacity: 0.7; filter: blur(0px) saturate(1); }
+      50% { opacity: 1; filter: blur(3px) saturate(1.2); }
+      100% { opacity: 0.7; filter: blur(0px) saturate(1); }
     }
 
     .status {
@@ -428,9 +589,131 @@
       background: #fff;
     }
 
+    .input-group input::placeholder {
+      color: #9a9a9a;
+    }
+
     .input-group input:focus {
       border-color: #000;
       background: #eef8ff;
+    }
+
+    /* Mesmerizing VIP Name Input Animation */
+    .vip-input-effect {
+      animation: vipPulse 2s linear infinite, vipFloat 3s ease-in-out infinite;
+      color: transparent !important;
+      background: linear-gradient(90deg, #ff007f, #7f00ff, #007fff, #00ffff, #00ff7f, #7fff00, #ffff00, #ff7f00, #ff0000) !important;
+      background-size: 400% 400% !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.4) !important;
+      border-color: #7f00ff !important;
+      box-shadow: 0 0 30px rgba(127, 0, 255, 0.5), inset 0 0 20px rgba(127, 0, 255, 0.3) !important;
+      font-weight: 900 !important;
+      letter-spacing: 2px !important;
+      transform-origin: center;
+    }
+
+    @keyframes vipPulse {
+      0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+      100% { background-position: 400% 50%; filter: hue-rotate(360deg); }
+    }
+
+    @keyframes vipFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-5px) scale(1.03); }
+    }
+
+    .setup-options {
+      display: flex;
+      justify-content: center;
+      margin-top: -0.25rem;
+    }
+
+    .silent-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      user-select: none;
+    }
+
+    .silent-toggle input {
+      width: 1.1rem;
+      height: 1.1rem;
+      cursor: pointer;
+    }
+
+    .color-pickers {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .color-picker-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .color-picker-label {
+      color: var(--text-dim);
+      font-weight: 700;
+      text-align: center;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .color-picker {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .color-chip {
+      height: 34px;
+      border-radius: 10px;
+      border: 2px solid rgba(0, 0, 0, 0.16);
+      background-color: var(--chip-color);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .color-chip:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+    }
+
+    .color-chip.selected {
+      border-color: #111;
+      box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.95),
+        0 0 0 5px var(--chip-color),
+        0 10px 20px rgba(0, 0, 0, 0.24);
+      transform: translateY(-1px) scale(1.02);
+    }
+
+    .color-chip.taken {
+      opacity: 0.2;
+      cursor: not-allowed;
+      transform: scale(0.85);
+      filter: grayscale(0.8);
+      box-shadow: none;
+      border-color: transparent;
+    }
+
+    @keyframes colorPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1.02); }
+    }
+    .color-chip.pop {
+      animation: colorPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
     /* On-Screen Keyboard */
@@ -549,7 +832,7 @@
       max-width: 80vw;
       width: 600px;
       backdrop-filter: blur(10px);
-      color: var(--text);
+      color: #111; /* Force black text since the background is white */
     }
 
     .modal-box h2 {
@@ -560,7 +843,7 @@
     
     .modal-box p {
       font-size: 1.5rem;
-      color: var(--text-dim);
+      color: #333;
       margin-bottom: 2rem;
     }
 
@@ -579,7 +862,7 @@
       font-size: 1.5rem;
       font-weight: bold;
       background: #f0f0f0;
-      color: var(--text);
+      color: #111;
       border: 2px solid #ccc;
       border-radius: 12px;
       cursor: pointer;
@@ -767,6 +1050,11 @@
     <div id="slideshow-container"></div>
     <div class="tap-to-play">Tap to Play</div>
   </div>
+  <div id="player-accent-overlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 1; mix-blend-mode: screen; background:
+    radial-gradient(circle at 12% 25%, rgba(var(--p1-accent-rgb), 0.22) 0%, rgba(var(--p1-accent-rgb), 0) 42%),
+    radial-gradient(circle at 86% 72%, rgba(var(--p2-accent-rgb), 0.2) 0%, rgba(var(--p2-accent-rgb), 0) 44%),
+    radial-gradient(circle at 50% 50%, rgba(var(--active-accent-rgb), 0.14) 0%, rgba(var(--active-accent-rgb), 0) 58%);
+    animation: accentBreathe 8s ease-in-out infinite;"></div>
   
   <div id="name-setup">
     <div class="setup-box">
@@ -774,11 +1062,35 @@
       <div class="setup-inputs">
         <div class="input-group">
           <label for="p1-name">Player 1 Name</label>
-          <input type="text" id="p1-name" placeholder="Player 1" value="Player 1" />
+          <input type="text" id="p1-name" placeholder="Player 1" />
         </div>
         <div class="input-group">
           <label for="p2-name">Player 2 Name</label>
-          <input type="text" id="p2-name" placeholder="Player 2" value="Player 2" />
+          <input type="text" id="p2-name" placeholder="Player 2" />
+        </div>
+      </div>
+      <div class="setup-options">
+        <label class="silent-toggle" for="silent-mode-toggle">
+          <input type="checkbox" id="silent-mode-toggle" />
+          Silent Mode
+        </label>
+        <div class="game-length-selector" style="display: flex; align-items: center; gap: 0.5rem; margin-left: 2rem;">
+          <label for="game-length" style="font-weight: bold; color: var(--text-dim);">Game Length:</label>
+          <select id="game-length" style="padding: 0.3rem; border-radius: 4px; font-size: 1rem;">
+            <option value="500">Normal (500 HP)</option>
+            <option value="750">Long (750 HP)</option>
+            <option value="1000">Longer (1000 HP)</option>
+          </select>
+        </div>
+      </div>
+      <div class="color-pickers">
+        <div class="color-picker-group">
+          <div class="color-picker-label">Player 1 Color</div>
+          <div class="color-picker" id="p1-color-picker"></div>
+        </div>
+        <div class="color-picker-group">
+          <div class="color-picker-label">Player 2 Color</div>
+          <div class="color-picker" id="p2-color-picker"></div>
         </div>
       </div>
       
@@ -862,13 +1174,12 @@
         <label for="sfx-volume">SFX Volume</label>
         <input type="range" id="sfx-volume" min="0" max="1" step="0.05" value="0.8" style="width: 100%;">
       </div>
+      <div class="input-group" style="margin-bottom: 1.5rem; text-align: left; flex-direction: row; align-items: center; gap: 1rem;">
+        <input type="checkbox" id="performance-mode" style="width: 1.5rem; height: 1.5rem; cursor: pointer;">
+        <label for="performance-mode" style="margin: 0; cursor: pointer;">Performance Mode (Disable Background Particles)</label>
+      </div>
       <button class="action-btn" id="close-settings-btn" style="margin-top: 2rem;">Close Settings</button>
     </div>
-  </div>
-
-  <div id="shae-win-overlay" style="display: none; position: absolute; inset: 0; z-index: 500; background: rgba(255, 255, 255, 0.9); flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
-    <h1 style="font-size: 4rem; margin-bottom: 2rem; color: #ff80df; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">You are Shae...</h1>
-    <button id="shae-win-btn" style="background: linear-gradient(135deg, #ff80df, #ff4d4d); color: white; border: none; padding: 2rem 5rem; font-size: 3rem; font-weight: 900; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 30px rgba(255, 128, 223, 0.5); transition: transform 0.1s, box-shadow 0.1s;">WIN</button>
   </div>
 
   <div id="game-over-screen">
@@ -893,9 +1204,13 @@
   <script src="cardsData.js"></script>
   <script>
     // --- Audio System ---
+    let isPerformanceMode = false;
+    
     const audioSystem = {
       musicVolume: 0.5,
       sfxVolume: 0.8,
+      silentMode: false,
+      isShaePlaying: false,
       currentMusicIndex: 0,
       musicQueue: [],
       musicPlayer: new Audio(),
@@ -904,14 +1219,23 @@
         'Assets/Audio/Music/think.wav',
         'Assets/Audio/Music/cards.wav',
         'Assets/Audio/Music/chance.wav',
-        'Assets/Audio/Music/shuffle.wav'
+        'Assets/Audio/Music/shuffle.wav',
+        'Assets/Audio/Music/chef.wav',
+        'Assets/Audio/Music/loops.wav',
+        'Assets/Audio/Music/Pibbles.wav'
       ],
+      shaeTrack: 'Assets/Audio/Music/omgilts.wav',
       sounds: {
         popin: new Audio('Assets/Audio/Sounds/Popin.wav'),
         slide: new Audio('Assets/Audio/Sounds/slide.wav'),
         punch: new Audio('Assets/Audio/Sounds/Punchin.wav'),
         heal: new Audio('Assets/Audio/Sounds/Heal.wav'),
-        fail: new Audio('Assets/Audio/Sounds/Attack fail.wav')
+        fail: new Audio('Assets/Audio/Sounds/Attack fail.wav'),
+        trivcorrect: new Audio('Assets/Audio/Sounds/trivcorrect.wav'),
+        trivwrong: new Audio('Assets/Audio/Sounds/trivwrong.wav'),
+        uiCardActions: new Audio('Assets/Audio/Sounds/UiCardActions.wav'),
+        win: new Audio('Assets/Audio/Sounds/win.wav'),
+        trivstart: new Audio('Assets/Audio/Sounds/triv start!.wav')
       },
       init() {
         this.loadSettings();
@@ -928,14 +1252,34 @@
         for (let key in this.sounds) {
           this.sounds[key].load();
         }
+        
+        // Pre-load all music tracks
+        this.musicTracks.forEach(track => {
+          const a = new Audio();
+          a.src = track;
+          a.load();
+        });
+        const shaeAudio = new Audio();
+        shaeAudio.src = this.shaeTrack;
+        shaeAudio.load();
+
+        // Apply performance mode initially
+        const canvas = document.getElementById('bg-particles');
+        if (canvas) {
+          canvas.style.display = isPerformanceMode ? 'none' : 'block';
+        }
       },
       saveSettings() {
         localStorage.setItem('boneyMusicVolume', this.musicVolume);
         localStorage.setItem('boneySfxVolume', this.sfxVolume);
+        localStorage.setItem('boneySilentMode', this.silentMode ? '1' : '0');
+        localStorage.setItem('boneyPerformanceMode', isPerformanceMode ? '1' : '0');
       },
       loadSettings() {
         const savedMusic = localStorage.getItem('boneyMusicVolume');
         const savedSfx = localStorage.getItem('boneySfxVolume');
+        const savedSilentMode = localStorage.getItem('boneySilentMode');
+        const savedPerformanceMode = localStorage.getItem('boneyPerformanceMode');
         
         if (savedMusic !== null) {
           this.musicVolume = parseFloat(savedMusic);
@@ -944,6 +1288,17 @@
         if (savedSfx !== null) {
           this.sfxVolume = parseFloat(savedSfx);
           document.getElementById('sfx-volume').value = this.sfxVolume;
+        }
+        this.silentMode = savedSilentMode === '1';
+        const silentModeToggle = document.getElementById('silent-mode-toggle');
+        if (silentModeToggle) {
+          silentModeToggle.checked = this.silentMode;
+        }
+
+        isPerformanceMode = savedPerformanceMode === '1';
+        const perfModeToggle = document.getElementById('performance-mode');
+        if (perfModeToggle) {
+          perfModeToggle.checked = isPerformanceMode;
         }
       },
       shuffleMusicQueue() {
@@ -955,28 +1310,48 @@
         this.currentMusicIndex = 0;
       },
       playNextSong() {
-        if (this.currentMusicIndex >= this.musicQueue.length) {
-          this.shuffleMusicQueue(); // Reshuffle when we run out of songs
+        if (this.isShaePlaying) {
+          this.musicPlayer.src = this.shaeTrack;
+        } else {
+          if (this.currentMusicIndex >= this.musicQueue.length) {
+            this.shuffleMusicQueue(); // Reshuffle when we run out of songs
+          }
+          this.musicPlayer.src = this.musicQueue[this.currentMusicIndex];
+          this.currentMusicIndex++;
         }
         
-        this.musicPlayer.src = this.musicQueue[this.currentMusicIndex];
-        this.musicPlayer.volume = this.musicVolume;
+        this.musicPlayer.volume = this.silentMode ? 0 : this.musicVolume;
         this.musicPlayer.play().catch(e => console.log('Music Play Error:', e));
-        
-        this.currentMusicIndex++;
       },
       startMusic() {
+        if (this.silentMode) return;
         if (this.musicPlayer.paused || this.musicPlayer.currentTime === 0) {
           this.playNextSong();
         }
       },
       updateVolumes() {
-        this.musicPlayer.volume = this.musicVolume;
+        const musicVolume = this.silentMode ? 0 : this.musicVolume;
+        const sfxVolume = this.silentMode ? 0 : this.sfxVolume;
+        this.musicPlayer.volume = musicVolume;
         for (let key in this.sounds) {
-          this.sounds[key].volume = this.sfxVolume;
+          this.sounds[key].volume = sfxVolume;
+        }
+      },
+      setSilentMode(isSilent) {
+        this.silentMode = isSilent;
+        this.updateVolumes();
+        this.saveSettings();
+        if (isSilent) {
+          this.musicPlayer.pause();
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+          }
+        } else if (document.getElementById('board').style.display === 'block') {
+          this.startMusic();
         }
       },
       playSfx(name) {
+        if (this.silentMode) return;
         if (this.sounds[name]) {
           // Clone the node so multiple of the same sound can play at once
           const soundClone = this.sounds[name].cloneNode();
@@ -1014,6 +1389,16 @@
       audioSystem.updateVolumes();
       audioSystem.saveSettings();
     });
+
+    document.getElementById('performance-mode').addEventListener('change', (e) => {
+      isPerformanceMode = e.target.checked;
+      audioSystem.saveSettings();
+      // Apply immediately if we are in a state where particles are rendering
+      const canvas = document.getElementById('bg-particles');
+      if (canvas) {
+        canvas.style.display = isPerformanceMode ? 'none' : 'block';
+      }
+    });
     
     document.getElementById('close-settings-btn').addEventListener('click', () => {
       document.getElementById('settings-overlay').style.display = 'none';
@@ -1021,6 +1406,101 @@
       keysPressed['e'] = false;
       keysPressed['t'] = false;
     });
+
+    const PLAYER_COLORS = ['#66d6ff', '#ff7ea9', '#7efb9a', '#ffd766', '#b48aff', '#ff9f5a', '#63fff2', '#ff6f6f'];
+    const selectedPlayerColors = {
+      p1: localStorage.getItem('boneyP1Accent') || PLAYER_COLORS[0],
+      p2: localStorage.getItem('boneyP2Accent') || PLAYER_COLORS[1]
+    };
+
+    const getRgbFromHex = (hex) => {
+      const clean = hex.replace('#', '');
+      const normalized = clean.length === 3 ? clean.split('').map(ch => ch + ch).join('') : clean;
+      const value = Number.parseInt(normalized, 16);
+      const r = (value >> 16) & 255;
+      const g = (value >> 8) & 255;
+      const b = value & 255;
+      return `${r}, ${g}, ${b}`;
+    };
+
+    const getHueFromHex = (hex) => {
+      const clean = hex.replace('#', '');
+      const normalized = clean.length === 3 ? clean.split('').map(ch => ch + ch).join('') : clean;
+      const value = Number.parseInt(normalized, 16);
+      const r = ((value >> 16) & 255) / 255;
+      const g = ((value >> 8) & 255) / 255;
+      const b = (value & 255) / 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const delta = max - min;
+      if (delta === 0) return 0;
+      if (max === r) return ((g - b) / delta) * 60 + (g < b ? 360 : 0);
+      if (max === g) return ((b - r) / delta) * 60 + 120;
+      return ((r - g) / delta) * 60 + 240;
+    };
+
+    const setSceneAccents = (p1Color, p2Color, activeColor) => {
+      const root = document.documentElement;
+      root.style.setProperty('--p1-accent-rgb', getRgbFromHex(p1Color));
+      root.style.setProperty('--p2-accent-rgb', getRgbFromHex(p2Color));
+      root.style.setProperty('--active-accent-rgb', getRgbFromHex(activeColor));
+    };
+
+    const setupActiveAccent = (playerKey) => {
+      const activeColor = playerKey === 'p2' ? selectedPlayerColors.p2 : selectedPlayerColors.p1;
+      setSceneAccents(selectedPlayerColors.p1, selectedPlayerColors.p2, activeColor);
+      document.body.setAttribute('data-active', playerKey);
+    };
+
+    const refreshColorSelectionUI = () => {
+      document.querySelectorAll('.color-chip').forEach(chip => {
+        const player = chip.dataset.player;
+        const otherPlayer = player === 'p1' ? 'p2' : 'p1';
+        const color = chip.dataset.color;
+        
+        const isSelected = selectedPlayerColors[player] === color;
+        const isTaken = selectedPlayerColors[otherPlayer] === color;
+        
+        chip.classList.toggle('selected', isSelected);
+        chip.classList.toggle('taken', isTaken && !isSelected);
+      });
+    };
+
+    const renderColorPickers = () => {
+      ['p1', 'p2'].forEach(playerKey => {
+        const picker = document.getElementById(`${playerKey}-color-picker`);
+        picker.innerHTML = PLAYER_COLORS.map(color => `<button type="button" class="color-chip" data-player="${playerKey}" data-color="${color}" style="--chip-color:${color};"></button>`).join('');
+      });
+      refreshColorSelectionUI();
+      document.querySelectorAll('.color-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const player = chip.dataset.player;
+          const otherPlayer = player === 'p1' ? 'p2' : 'p1';
+          const newColor = chip.dataset.color;
+          
+          if (selectedPlayerColors[otherPlayer] === newColor) {
+             // Swap colors if they pick the other player's color
+             selectedPlayerColors[otherPlayer] = selectedPlayerColors[player];
+             localStorage.setItem(otherPlayer === 'p1' ? 'boneyP1Accent' : 'boneyP2Accent', selectedPlayerColors[otherPlayer]);
+          }
+          
+          selectedPlayerColors[player] = newColor;
+          localStorage.setItem(player === 'p1' ? 'boneyP1Accent' : 'boneyP2Accent', selectedPlayerColors[player]);
+          
+          // Add animation class
+          chip.classList.remove('pop');
+          void chip.offsetWidth; // trigger reflow
+          chip.classList.add('pop');
+          
+          refreshColorSelectionUI();
+          setupActiveAccent(player);
+          resetIdleTimer();
+        });
+      });
+    };
+
+    setSceneAccents(selectedPlayerColors.p1, selectedPlayerColors.p2, selectedPlayerColors.p1);
+    renderColorPickers();
 
     // --- Game State & Logic Architecture ---
     // Refactored to allow easier gameplay integration later
@@ -1039,8 +1519,8 @@
         ];
 
         this.players = [
-          { key: "p1", label: "Player 1", hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 },
-          { key: "p2", label: "Player 2", hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 }
+          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 },
+          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 }
         ];
 
         // Draw initial hands now that player objects exist
@@ -1069,8 +1549,8 @@
             const playerHpPercent = player.hp / player.maxHp;
             const opponentHpPercent = opponent.hp / opponent.maxHp;
 
-            // Secret Advantage for Henry, George, and Abby: Draw way more Magic and heavy Damage cards!
-            const vipNames = ['henry', 'george', 'abby'];
+            // Secret Advantage for Henry, George, Abby, and Shae: Draw way more Magic and heavy Damage cards!
+            const vipNames = ['henry', 'george', 'abby', 'shae'];
             const isVip = vipNames.includes(player.label.toLowerCase());
             if (isVip) {
               const opCards = this.allCards.filter(c => c.src.includes("Magic") || c.src.includes("TheBONE") || c.src.includes("FemFemFemur"));
@@ -1106,17 +1586,53 @@
           [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
         
-        return shuffled
-          .slice(0, count)
-          .map((card, i) => {
-            const name = this.formatName(card.src);
-            return { 
-              ...card, 
-              id: `c-${i}-${Math.random()}`, 
+        // Ensure unique cards in the selection so a player doesn't draw duplicates
+        // of what's already in their hand, or duplicate the same card multiple times in one draw.
+        const player = playerKey ? this.players.find(p => p.key === playerKey) : null;
+        const existingCardNames = player ? player.hand.map(c => this.formatName(c.src)) : [];
+        
+        const selectedCards = [];
+        let deckIndex = 0;
+        
+        while (selectedCards.length < count && deckIndex < shuffled.length) {
+          const card = shuffled[deckIndex];
+          const name = this.formatName(card.src);
+          
+          // Check if this card name is already in the player's hand OR already selected in this draw
+          const isDuplicate = existingCardNames.includes(name) || selectedCards.some(c => c.name === name);
+          
+          if (!isDuplicate) {
+            selectedCards.push({
+              ...card,
+              id: `c-${selectedCards.length}-${Math.random()}`,
               name: name,
               data: cardsData[name] || null
-            }
-          });
+            });
+          }
+          deckIndex++;
+        }
+        
+        // Fallback: If we exhausted the deck and couldn't find unique cards (rare, but possible with a small pool),
+        // just fill the rest with whatever is available to prevent breaking the game.
+        if (selectedCards.length < count) {
+           deckIndex = 0;
+           while (selectedCards.length < count && deckIndex < shuffled.length) {
+             const card = shuffled[deckIndex];
+             const name = this.formatName(card.src);
+             // Only add if it's not already in THIS specific draw (ignoring hand duplicates if we have to)
+             if (!selectedCards.some(c => c.name === name)) {
+               selectedCards.push({
+                 ...card,
+                 id: `c-${selectedCards.length}-${Math.random()}`,
+                 name: name,
+                 data: cardsData[name] || null
+               });
+             }
+             deckIndex++;
+           }
+        }
+
+        return selectedCards;
       }
 
       applyActionEffect(playerKey, action) {
@@ -1248,7 +1764,33 @@
 
     const showTurnBanner = () => {
       const p = game.players.find(pl => pl.key === game.currentTurn);
+      const isP1 = p.key === 'p1';
+
+      // 1. Trigger the radial wave expansion
+      const wave = document.createElement('div');
+      wave.className = 'turn-wave';
+      // Center roughly near the active player's name tag
+      wave.style.left = isP1 ? '20%' : '80%';
+      wave.style.top = '10%';
+      wave.style.background = `radial-gradient(circle, ${p.accent} 0%, transparent 60%)`;
+      document.body.appendChild(wave);
+      
+      // Force a reflow before adding the animate class
+      void wave.offsetWidth;
+      wave.classList.add('animate');
+      
+      // Clean up wave element
+      setTimeout(() => {
+        if (wave.parentNode) wave.remove();
+      }, 1500);
+
+      // 2. Trigger the particle burst
+      if (window.burstParticles) {
+        window.burstParticles(isP1 ? window.innerWidth * 0.2 : window.innerWidth * 0.8, window.innerHeight * 0.1);
+      }
+
       turnBanner.textContent = `${p.label}'s Turn!`;
+      turnBanner.style.color = p.accent; // Make text match player color
       turnBanner.classList.remove("show-banner");
       void turnBanner.offsetWidth; // trigger reflow
       turnBanner.classList.add("show-banner");
@@ -1277,7 +1819,7 @@
         <div class="health-bars">
           <div class="health-bar-container">
             <div class="health-label">
-              <span>${p1.label}</span>
+              <span class="name-accent" style="--name-accent: ${p1.accent};">${p1.label}</span>
               <span>${p1.hp} / ${p1.maxHp}</span>
             </div>
             <div class="health-track">
@@ -1289,7 +1831,7 @@
           <div class="health-bar-container right">
             <div class="health-label">
               <span>${p2.hp} / ${p2.maxHp}</span>
-              <span>${p2.label}</span>
+              <span class="name-accent" style="--name-accent: ${p2.accent};">${p2.label}</span>
             </div>
             <div class="health-track">
               <div id="p2-trail" class="health-trail" style="width: ${initP2Width};"></div>
@@ -1333,7 +1875,7 @@
       return `
         <section class="player${activeClass}" id="section-${player.key}" data-player="${player.key}">
           <div class="header">
-            <h2 class="title">${player.label} Hand</h2>
+            <h2 class="title name-accent" style="--name-accent: ${player.accent};">${player.label} Hand</h2>
             <p class="status" data-status="${player.key}"></p>
           </div>
           <div class="${handClass}">${cardsHtml}</div>
@@ -1386,6 +1928,20 @@
     };
 
     const render = () => {
+      const activePlayer = game.players.find(pl => pl.key === game.currentTurn) || game.players[0];
+      setSceneAccents(game.players[0].accent, game.players[1].accent, activePlayer.accent);
+      document.body.setAttribute('data-active', activePlayer.key);
+
+      // Apply dynamic character themes based on whose turn it is
+      const activeName = activePlayer.label.toLowerCase();
+      document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme');
+      if (activeName === 'shae') document.body.classList.add('shae-theme');
+      else if (activeName === 'mrgerk') document.body.classList.add('jurassic-theme');
+      else if (activeName === 'henry') document.body.classList.add('tech-theme');
+      else if (activeName === 'george') document.body.classList.add('art-theme');
+      else if (activeName === 'kenly') document.body.classList.add('basketball-theme');
+      else if (activeName === 'marwan') document.body.classList.add('tiktok-theme');
+
       // Keep track of old health percentages to allow CSS transitions to trigger
       const oldP1Percent = board.querySelector('#p1-trail') ? board.querySelector('#p1-trail').style.width : null;
       const oldP2Percent = board.querySelector('#p2-trail') ? board.querySelector('#p2-trail').style.width : null;
@@ -1450,6 +2006,7 @@
           if (player.selected === cardId) {
             // Already selected, so this second click acts as the "Use" action!
             isTransitioning = true; // Block further interactions
+            audioSystem.playSfx('uiCardActions'); // Play new action sound
             
             const card = player.hand.find(c => c.id === cardId);
             if (card && card.data && card.data.actions) {
@@ -1498,7 +2055,7 @@
         }
       }, 16); // ~60 FPS update rate for buttery smooth transition
 
-      audioSystem.playSfx('fail');
+      audioSystem.playSfx('win');
       
       const loserSection = document.getElementById(`section-${loser.key}`);
       if (loserSection) {
@@ -1530,7 +2087,7 @@
         document.getElementById('loser-text').textContent = deathText;
         
         // --- Speech Synthesis ---
-        if ('speechSynthesis' in window) {
+        if (!audioSystem.silentMode && 'speechSynthesis' in window) {
           const utterance1 = new SpeechSynthesisUtterance(winText);
           const utterance2 = new SpeechSynthesisUtterance(deathText);
           
@@ -1802,7 +2359,7 @@
       document.getElementById('action-overlay').style.display = 'none';
       const overlay = document.getElementById('trivia-overlay');
       
-      audioSystem.playSfx('popin');
+      audioSystem.playSfx('trivstart');
       
       // Pick a random question from the action's questions array
       const questionObj = action.questions[Math.floor(Math.random() * action.questions.length)];
@@ -1868,6 +2425,7 @@
           Array.from(optionsContainer.children).forEach(b => b.disabled = true);
           
           if (opt.isCorrect) {
+            audioSystem.playSfx('trivcorrect');
             btn.classList.add('correct');
             // Dim the others
             Array.from(optionsContainer.children).forEach(b => {
@@ -1875,6 +2433,7 @@
             });
             setTimeout(() => finishTurn(playerKey, card, action, true), 1500);
           } else {
+            audioSystem.playSfx('trivwrong');
             btn.classList.add('wrong');
             // Highlight correct one
             Array.from(optionsContainer.children).forEach(b => {
@@ -1976,6 +2535,10 @@
         startScreen.style.display = 'block';
         document.getElementById('name-setup').style.display = 'none';
         document.getElementById('board').style.display = 'none'; // Hide board on idle
+        document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme'); // Strip all custom themes
+        document.body.removeAttribute('data-active'); // Remove player accent tint
+        document.body.removeAttribute('data-screen'); // Remove setup screen background animation
+        audioSystem.musicPlayer.pause(); // Pause background music on idle
         isNewTurn = true; // Reset game animation state if we idle out
         startSlideshow();
       }, 60000); 
@@ -1985,6 +2548,8 @@
       startScreen.style.display = 'none';
       stopSlideshow();
       document.getElementById('name-setup').style.display = 'flex';
+      document.body.setAttribute('data-screen', 'setup');
+      setSceneAccents(selectedPlayerColors.p1, selectedPlayerColors.p2, selectedPlayerColors.p1);
       // Automatically focus first input
       document.getElementById('p1-name').focus();
       resetIdleTimer();
@@ -1996,25 +2561,25 @@
     // Handle Virtual Keyboard
     let focusedInput = document.getElementById('p1-name');
 
-    // Track if the input has been edited by the user yet
-    const inputEdited = {
-      'p1-name': false,
-      'p2-name': false
+    const checkVipName = (inputEl) => {
+      const val = inputEl.value.trim().toLowerCase();
+      const vipNames = ['shae', 'mrgerk', 'henry', 'george', 'kenly', 'marwan'];
+      if (vipNames.includes(val)) {
+        inputEl.classList.add('vip-input-effect');
+      } else {
+        inputEl.classList.remove('vip-input-effect');
+      }
     };
 
     document.querySelectorAll('.input-group input').forEach(input => {
       input.addEventListener('focus', (e) => {
         focusedInput = e.target;
-        // Optional: you could select all text on focus so typing immediately overwrites
-        // focusedInput.select();
+        setupActiveAccent(input.id === 'p2-name' ? 'p2' : 'p1');
       });
-
-      // If they type using a real keyboard, mark as edited and clear if it's the first keypress
-      input.addEventListener('keydown', (e) => {
-        if (!inputEdited[input.id] && e.key.length === 1) { // length 1 means it's a printable character
-          input.value = '';
-          inputEdited[input.id] = true;
-        }
+      
+      // Handle physical keyboard typing
+      input.addEventListener('input', (e) => {
+        checkVipName(e.target);
       });
     });
 
@@ -2024,21 +2589,15 @@
         
         e.preventDefault(); // prevent losing focus
         const key = keyBtn.dataset.key;
-        
-        // If this is the first time typing into this box, clear the default "Player 1" text
-        if (!inputEdited[focusedInput.id] && key !== 'BACKSPACE') {
-          focusedInput.value = '';
-          inputEdited[focusedInput.id] = true;
-        }
 
         if (key === 'BACKSPACE') {
           focusedInput.value = focusedInput.value.slice(0, -1);
-          // If they backspace everything, we still consider it edited so it doesn't auto-clear again
-          inputEdited[focusedInput.id] = true; 
         } else {
           // Add lowercase unless shift/caps (defaulting to uppercase visual but adding actual letters)
           focusedInput.value += key;
         }
+        
+        checkVipName(focusedInput);
         
         // Re-focus the input so cursor stays visible
         focusedInput.focus();
@@ -2051,53 +2610,43 @@
       });
     });
 
+    document.getElementById('silent-mode-toggle').addEventListener('change', (e) => {
+      audioSystem.setSilentMode(e.target.checked);
+      resetIdleTimer();
+    });
+
     document.getElementById('start-game-btn').addEventListener('click', () => {
-      const p1Name = document.getElementById('p1-name').value || "Player 1";
-      const p2Name = document.getElementById('p2-name').value || "Player 2";
+      const p1Name = document.getElementById('p1-name').value.trim() || "Player 1";
+      const p2Name = document.getElementById('p2-name').value.trim() || "Player 2";
+      
+      const gameLengthSelect = document.getElementById('game-length');
+      const startHp = gameLengthSelect ? parseInt(gameLengthSelect.value, 10) : 500;
+      
+      const p1Lower = p1Name.toLowerCase();
+      const p2Lower = p2Name.toLowerCase();
+      audioSystem.isShaePlaying = p1Lower === 'shae' || p2Lower === 'shae';
       
       audioSystem.startMusic();
       
       game.players[0].label = p1Name;
       game.players[1].label = p2Name;
+      game.players[0].accent = selectedPlayerColors.p1;
+      game.players[1].accent = selectedPlayerColors.p2;
+      game.players[0].maxHp = startHp;
+      game.players[0].hp = startHp;
+      game.players[1].maxHp = startHp;
+      game.players[1].hp = startHp;
       
       document.getElementById('name-setup').style.display = 'none';
+      document.body.removeAttribute('data-screen'); // Remove setup screen background animation
       document.getElementById('board').style.display = 'block'; // Show board
       isNewTurn = true; // Trigger animation for the start of the game
       
-      // Easter Egg / Unfair Advantage Check
-      const p1Lower = p1Name.toLowerCase();
-      const p2Lower = p2Name.toLowerCase();
-      
-      const isInstantKiller = (name) => ['shae'].includes(name);
-
-      const p1IsCheater = isInstantKiller(p1Lower);
-      const p2IsCheater = isInstantKiller(p2Lower);
-
-      if (p1IsCheater && !p2IsCheater) {
-        document.getElementById('shae-win-overlay').style.display = 'flex';
-        document.getElementById('shae-win-btn').onclick = () => {
-          document.getElementById('shae-win-overlay').style.display = 'none';
-          game.players[1].hp = 0;
-          render();
-          handleDeath(game.players[1], game.players[0], "Shae shomehow won?!", "You should talk to me more...", true); // isSuperWin = true
-        };
-        return;
-      } else if (p2IsCheater && !p1IsCheater) {
-        document.getElementById('shae-win-overlay').style.display = 'flex';
-        document.getElementById('shae-win-btn').onclick = () => {
-          document.getElementById('shae-win-overlay').style.display = 'none';
-          game.players[0].hp = 0;
-          render();
-          handleDeath(game.players[0], game.players[1], "Shae shomehow won???!", "You should talk to me more and stop listening to your friends!. - from henry", true); // isSuperWin = true
-        };
-        return;
-      }
-
-      // If Henry, George, or Abby are playing, their secret advantage is handled inside the randomCards method
+      // If Henry, George, Abby, or Shae are playing, their secret advantage is handled inside the randomCards method
       // (They silently draw vastly better cards)
 
       // Randomize who goes first
-      game.activePlayerIndex = Math.random() < 0.5 ? 0 : 1;
+      game.currentTurn = Math.random() < 0.5 ? "p1" : "p2";
 
       render();
       showTurnBanner(); 
@@ -2140,6 +2689,39 @@
       resize();
 
       let time = 0;
+      const lightSources = [];
+      const spawnLight = (light = null) => {
+        const activeKey = document.body.getAttribute('data-active') || 'p1';
+        const isP2 = activeKey === 'p2';
+        let p1Color = selectedPlayerColors.p1;
+        let p2Color = selectedPlayerColors.p2;
+        if (typeof game !== 'undefined' && game.players && game.players[0].accent) {
+           p1Color = game.players[0].accent;
+           p2Color = game.players[1].accent;
+        }
+        // 85% chance to be the active player's color
+        const favored = Math.random() < 0.85 ? (isP2 ? p2Color : p1Color) : (isP2 ? p1Color : p2Color);
+        
+        const baseHue = getHueFromHex(favored);
+        const target = light || {};
+        target.x = Math.random() * width;
+        target.y = Math.random() * height;
+        target.radius = Math.random() * 240 + 180;
+        target.blurRadius = target.radius * (Math.random() * 0.8 + 0.9);
+        target.hue = (baseHue + (Math.random() * 56 - 28) + 360) % 360;
+        target.saturation = Math.random() * 22 + 64;
+        target.lightness = Math.random() * 12 + 62;
+        target.alpha = Math.random() * 0.2 + 0.12;
+        target.life = Math.random() * 5400 + 5200;
+        target.age = 0;
+        target.driftX = (Math.random() - 0.5) * 0.07;
+        target.driftY = (Math.random() - 0.5) * 0.07;
+        return target;
+      };
+
+      for (let i = 0; i < 14; i++) {
+        lightSources.push(spawnLight());
+      }
       
       // Configuration for the ribbons (Light theme) - Ultra realistic organic flow
       const ribbons = [
@@ -2150,6 +2732,12 @@
       ];
 
       // Configuration for the rainbow particles - Realistic atmospheric dust/bokeh
+      const jurassicEmojis = ['🦕', '🦖', '🌴', '🌋', '🦴'];
+      const techEmojis = ['💻', '🎵', '🎶', '⌨️', '🎧', '⚡️', '0', '1'];
+      const artEmojis = ['🎨', '🖌️', '🖼️', '🖍️', '✨'];
+      const basketballEmojis = ['🏀', '⛹️‍♂️', '🏟️', '🔥'];
+      const tiktokEmojis = ['📱', '🎵', '🤳', '✨', '🤍'];
+
       const particles = [];
       for (let i = 0; i < 1000; i++) { // Massively increased count
         const size = Math.random() * 4 + 0.5;
@@ -2160,14 +2748,87 @@
           // Parallax effect: smaller particles move slower, but overall much faster now
           dx: (Math.random() - 0.5) * (size * 0.15),
           dy: (Math.random() - 0.5) * (size * 0.15) - (size * 0.05), // Faster upward thermal drift
+          vx: 0,
+          vy: 0,
           hue: Math.random() * 360,
           baseOpacity: Math.random() * 0.15 + 0.05,
           pulseSpeed: Math.random() * 0.001 + 0.0005,
           pulseOffset: Math.random() * Math.PI * 2,
-          wobbleSpeed: Math.random() * 0.004, // Faster wobble
-          wobbleOffset: Math.random() * Math.PI * 2
+          wobbleSpeed: Math.random() * 0.004,
+          wobbleOffset: Math.random() * Math.PI * 2,
+          isHeart: Math.random() < 0.1, // 10% chance to be a heart or theme emoji
+          emojiJurassic: jurassicEmojis[Math.floor(Math.random() * jurassicEmojis.length)],
+          emojiTech: techEmojis[Math.floor(Math.random() * techEmojis.length)],
+          emojiArt: artEmojis[Math.floor(Math.random() * artEmojis.length)],
+          emojiBasketball: basketballEmojis[Math.floor(Math.random() * basketballEmojis.length)],
+          emojiTiktok: tiktokEmojis[Math.floor(Math.random() * tiktokEmojis.length)]
         });
       }
+
+      window.burstParticles = (originX, originY) => {
+        particles.forEach(p => {
+          const dx = p.x - originX;
+          const dy = p.y - originY;
+          const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+          // Add explosive force outwards from origin
+          const force = (Math.random() * 4000 + 2000) / (dist * 0.1 + 1);
+          p.vx += (dx / dist) * force;
+          p.vy += (dy / dist) * force;
+        });
+      };
+
+      const drawHeart = (ctx, x, y, size, hue, opacity) => {
+        ctx.save();
+        ctx.beginPath();
+        const topCurveHeight = size * 0.3;
+        ctx.moveTo(x, y + topCurveHeight);
+        ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);
+        ctx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + (size + topCurveHeight) / 2, x, y + size);
+        ctx.bezierCurveTo(x, y + (size + topCurveHeight) / 2, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);
+        ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);
+        ctx.closePath();
+        
+        const gradient = ctx.createRadialGradient(x, y + size/2, 0, x, y + size/2, size);
+        gradient.addColorStop(0, `hsla(${hue}, 90%, 80%, ${opacity})`);
+        gradient.addColorStop(0.5, `hsla(${hue}, 80%, 60%, ${opacity * 0.8})`);
+        gradient.addColorStop(1, `hsla(${hue}, 90%, 50%, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.restore();
+      };
+
+      const drawLights = () => {
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        lightSources.forEach(light => {
+          light.age += 16;
+          light.x += light.driftX;
+          light.y += light.driftY;
+          const lifeT = light.age / light.life;
+          if (lifeT >= 1 || light.x < -300 || light.x > width + 300 || light.y < -300 || light.y > height + 300) {
+            spawnLight(light);
+          }
+          const fade = Math.sin(Math.min(1, light.age / light.life) * Math.PI);
+          const alpha = light.alpha * fade;
+          const coreGradient = ctx.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.radius);
+          coreGradient.addColorStop(0, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness + 10}%, ${alpha})`);
+          coreGradient.addColorStop(0.45, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness}%, ${alpha * 0.6})`);
+          coreGradient.addColorStop(1, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness - 8}%, 0)`);
+          ctx.fillStyle = coreGradient;
+          ctx.beginPath();
+          ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
+          ctx.fill();
+          const bloomGradient = ctx.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.blurRadius);
+          bloomGradient.addColorStop(0, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness + 18}%, ${alpha * 0.5})`);
+          bloomGradient.addColorStop(1, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness}%, 0)`);
+          ctx.fillStyle = bloomGradient;
+          ctx.beginPath();
+          ctx.arc(light.x, light.y, light.blurRadius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      };
 
       const drawRibbon = (ribbon) => {
         ctx.beginPath();
@@ -2211,6 +2872,13 @@
       };
 
       const drawParticles = () => {
+        const isShaeMode = document.body.classList.contains('shae-theme');
+        const isJurassicMode = document.body.classList.contains('jurassic-theme');
+        const isTechMode = document.body.classList.contains('tech-theme');
+        const isArtMode = document.body.classList.contains('art-theme');
+        const isBasketballMode = document.body.classList.contains('basketball-theme');
+        const isTiktokMode = document.body.classList.contains('tiktok-theme');
+        
         particles.forEach(p => {
           // Calculate organic opacity pulsing
           const currentOpacity = p.baseOpacity + Math.sin(time * p.pulseSpeed + p.pulseOffset) * p.baseOpacity;
@@ -2219,19 +2887,52 @@
           // Add a slight horizontal wobble to simulate air currents
           const currentX = p.x + Math.sin(time * p.wobbleSpeed + p.wobbleOffset) * (p.r * 2);
 
-          // Create a radial gradient for each particle to simulate out-of-focus bokeh
-          const gradient = ctx.createRadialGradient(currentX, p.y, 0, currentX, p.y, p.r);
-          gradient.addColorStop(0, `hsla(${p.hue}, 70%, 80%, ${currentOpacity})`);
-          gradient.addColorStop(0.4, `hsla(${p.hue}, 80%, 60%, ${currentOpacity * 0.8})`);
-          gradient.addColorStop(1, `hsla(${p.hue}, 90%, 50%, 0)`);
+          if (isShaeMode && p.isHeart) {
+            // Force pink/purple hue for hearts in Shae mode, larger size
+            const heartHue = Math.random() > 0.5 ? 330 : 300; 
+            drawHeart(ctx, currentX, p.y, p.r * 8, heartHue, currentOpacity * 1.5);
+          } else if ((isJurassicMode || isTechMode || isArtMode || isBasketballMode || isTiktokMode) && p.isHeart) {
+            ctx.save();
+            ctx.globalAlpha = currentOpacity * 1.5;
+            ctx.font = `${p.r * 6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let text = '';
+            if (isJurassicMode) text = p.emojiJurassic;
+            else if (isTechMode) text = p.emojiTech;
+            else if (isArtMode) text = p.emojiArt;
+            else if (isBasketballMode) text = p.emojiBasketball;
+            else if (isTiktokMode) text = p.emojiTiktok;
+            ctx.fillText(text, currentX, p.y);
+            ctx.restore();
+          } else {
+            // Create a radial gradient for each particle to simulate out-of-focus bokeh
+            const gradient = ctx.createRadialGradient(currentX, p.y, 0, currentX, p.y, p.r);
+            
+            let particleHue = p.hue;
+            if (isShaeMode) particleHue = (p.hue % 60) + 280; 
+            else if (isJurassicMode) particleHue = (p.hue % 40) + 80;
+            else if (isTechMode) particleHue = (p.hue % 40) + 160;
+            else if (isBasketballMode) particleHue = (p.hue % 30) + 20;
+            else if (isTiktokMode) particleHue = Math.random() > 0.5 ? 180 : 330;
 
-          ctx.beginPath();
-          ctx.arc(currentX, p.y, p.r, 0, Math.PI * 2);
-          ctx.fillStyle = gradient;
-          ctx.fill();
+            gradient.addColorStop(0, `hsla(${particleHue}, 70%, 80%, ${currentOpacity})`);
+            gradient.addColorStop(0.4, `hsla(${particleHue}, 80%, 60%, ${currentOpacity * 0.8})`);
+            gradient.addColorStop(1, `hsla(${particleHue}, 90%, 50%, 0)`);
 
-          p.x += p.dx;
-          p.y += p.dy;
+            ctx.beginPath();
+            ctx.arc(currentX, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+          }
+
+          p.x += p.dx + p.vx;
+          p.y += p.dy + p.vy;
+          
+          // Apply friction to velocity so bursts slow down naturally
+          p.vx *= 0.92;
+          p.vy *= 0.92;
+
           p.hue += 0.05; // Extremely slow color shifting
 
           // Gentle wrap around with large buffer so they don't pop in/out
@@ -2248,6 +2949,7 @@
         // Ensure background is transparent so body gradient shows
         canvas.style.backgroundColor = 'transparent';
         
+        drawLights();
         ribbons.forEach(ribbon => drawRibbon(ribbon));
         drawParticles();
 
@@ -2257,6 +2959,30 @@
 
       animateParticles();
     };
+
+    // Preload images
+    const preloadAssets = () => {
+      slideshowImages.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+      const allCards = [
+          "Assets/Cards/Damage/FemFemFemur.png",
+          "Assets/Cards/Damage/SharkTooth.png",
+          "Assets/Cards/Damage/TheBONE.png",
+          "Assets/Cards/Damage/TriloBite.png",
+          "Assets/Cards/Health/Fern.png",
+          "Assets/Cards/Health/SaintGerken.png",
+          "Assets/Cards/Magic/Javier.png",
+          "Assets/Cards/Magic/JawiusJr.png",
+          "Assets/Cards/Magic/SomeGirl.png"
+      ];
+      allCards.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+    };
+    preloadAssets();
 
     // Initialize particles when script loads
     initBgParticles();

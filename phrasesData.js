@@ -4,7 +4,10 @@ const phrasesData = {
     "{winner} sent {loser} back to the Jurassic period!",
     "Flawless victory for {winner}!",
     "{winner} is the apex predator!",
-    "{loser} couldn't handle {winner}'s MAGIC!",
+    "{winner} might have peed their pants!",
+    "{winner} , I love you so much that my heart stops beating!",
+    "{winner} George gassy power!",
+    "{loser} couldn't handle {winner}'s MAGIC cards!",
     "{winner} swept the floor with {loser}!",
     "It's a beautiful day for {winner} to win!",
     "{winner} survived extinction! {loser} did not.",
@@ -12,6 +15,8 @@ const phrasesData = {
     "{loser} should probably just uninstall after what {winner} did to them.",
     "{winner} didn't even break a sweat destroying {loser}.",
     "Was {loser} even trying? {winner} dominated.",
+    "Send {loser} to the office. {winner} got good.",
+    "Public exicution of {loser} in 7 days. {winner} said so.",
     "{winner} just permanently humbled {loser}."
   ],
   deathPhrases: [
