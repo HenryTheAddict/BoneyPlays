@@ -1952,7 +1952,9 @@
         const targetX = sectionRect.width / 2;
         const targetY = sectionRect.height * 0.45; 
 
-        player.hand.forEach(card => {
+        const totalCards = player.hand.length;
+
+        player.hand.forEach((card, index) => {
           const cardEl = document.getElementById(`card-${card.id}`);
           const containerEl = document.getElementById(`container-${card.id}`);
           if (!cardEl || !containerEl) return;
@@ -1977,9 +1979,18 @@
             const dynamicScale = Math.min(1.0, Math.max(0.3, targetHeight / 1143)); 
 
             cardEl.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${dynamicScale})`;
+            cardEl.style.zIndex = "100"; // Selected card overlaps everything
           } else {
             // Unselected scale is 0.175 (140px width / 800px base width)
-            cardEl.style.transform = `translate(0, 0) scale(0.175)`;
+
+            // Calculate rotation based on index relative to center
+            const centerIndex = (totalCards - 1) / 2;
+            const relativePos = index - centerIndex;
+            const rotation = relativePos * 5; // 5 degrees per card away from center
+            const translateY = Math.abs(relativePos) * 10; // Slight arch effect
+
+            cardEl.style.transform = `translate(0, ${translateY}px) scale(0.175) rotate(${rotation}deg)`;
+            cardEl.style.zIndex = "1"; // Reset z-index
           }
         });
       });
@@ -2876,7 +2887,9 @@
           emojiArt: artEmojis[Math.floor(Math.random() * artEmojis.length)],
           emojiBasketball: basketballEmojis[Math.floor(Math.random() * basketballEmojis.length)],
           emojiTiktok: tiktokEmojis[Math.floor(Math.random() * tiktokEmojis.length)],
-          emojiTheo: theoEmojis[Math.floor(Math.random() * theoEmojis.length)]
+          emojiTheo: theoEmojis[Math.floor(Math.random() * theoEmojis.length)],
+          emojiFlared: flaredEmojis[Math.floor(Math.random() * flaredEmojis.length)],
+          emojiStinky: stinkyEmojis[Math.floor(Math.random() * stinkyEmojis.length)]
         });
       }
 
@@ -3022,8 +3035,8 @@
             else if (isBasketballMode) text = p.emojiBasketball;
             else if (isTiktokMode) text = p.emojiTiktok;
             else if (isTheoMode) text = p.emojiTheo;
-            else if (isFlaredMode) text = flaredEmojis[Math.floor(Math.random() * flaredEmojis.length)];
-            else if (isStinkyMode) text = stinkyEmojis[Math.floor(Math.random() * stinkyEmojis.length)];
+            else if (isFlaredMode) text = p.emojiFlared;
+            else if (isStinkyMode) text = p.emojiStinky;
             ctx.fillText(text, currentX, p.y);
             ctx.restore();
           } else {
