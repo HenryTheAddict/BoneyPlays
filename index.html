@@ -1591,6 +1591,12 @@
               const nonHealthCards = this.allCards.filter(c => !c.src.includes("Health"));
               weightedDeck.push(...nonHealthCards);
             }
+
+            // Balance 4: Prevent drawing Seething Rage if the player ALREADY has active extra turns
+            // This stops infinite stacking loops entirely at the draw phase.
+            if (player.extraTurns > 0) {
+               weightedDeck = weightedDeck.filter(c => !c.src.includes("SeethingRage"));
+            }
           }
         }
 
@@ -1836,8 +1842,8 @@
       const p1ColorClass = p1Percent > 50 ? "health-high" : p1Percent > 20 ? "health-med" : "health-low";
       const p2ColorClass = p2Percent > 50 ? "health-high" : p2Percent > 20 ? "health-med" : "health-low";
 
-      const p1Status = p1.poisonRounds > 0 ? `<div class="status-icons"><span class="poison-badge">Poisoned (${p1.poisonRounds})</span></div>` : "";
-      const p2Status = p2.poisonRounds > 0 ? `<div class="status-icons"><span class="poison-badge">Poisoned (${p2.poisonRounds})</span></div>` : "";
+      const p1Status = p1.poisonRounds > 0 ? `<div class="status-icons"><span class="poison-badge">Poisoned (${p1.poisonRounds} rounds left)</span></div>` : "";
+      const p2Status = p2.poisonRounds > 0 ? `<div class="status-icons"><span class="poison-badge">Poisoned (${p2.poisonRounds} rounds left)</span></div>` : "";
 
       return `
         <div class="health-bars">
@@ -2391,10 +2397,30 @@
       card.data.actions.forEach((action, index) => {
         const btn = document.createElement('button');
         btn.className = 'action-btn';
-        btn.innerHTML = `<strong>${action.name}</strong><br><small style="font-size:1rem; font-weight:normal">${action.description}</small>`;
-        btn.onclick = () => {
-          showTriviaOverlay(playerKey, card, action);
-        };
+        
+        // Special logic for "Some Girl" logic: Cannot be used if opponent has less than 2 cards
+        let isDisabled = false;
+        let extraText = '';
+        if (card.name === 'SomeGirl' && action.name === 'Explosion') {
+           const opponent = game.players.find(p => p.key !== playerKey);
+           if (opponent && opponent.hand.length < 2) {
+             isDisabled = true;
+             extraText = '<br><span style="color:red; font-size:0.9rem;">(Opponent needs at least 2 cards)</span>';
+           }
+        }
+        
+        btn.innerHTML = `<strong>${action.name}</strong><br><small style="font-size:1rem; font-weight:normal">${action.description}</small>${extraText}`;
+        
+        if (isDisabled) {
+           btn.disabled = true;
+           btn.style.opacity = '0.5';
+           btn.style.cursor = 'not-allowed';
+        } else {
+           btn.onclick = () => {
+             showTriviaOverlay(playerKey, card, action);
+           };
+        }
+        
         list.appendChild(btn);
       });
 

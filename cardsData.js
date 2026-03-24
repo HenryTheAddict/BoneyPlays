@@ -685,7 +685,7 @@ const cardsData = {
         "poison": 100,
         "poisonRounds": 4,
         "description": "Rainfall Burns All... Ask Theodore, he was burned. Causes 100 poison damage for 4 rounds.",
-        "trivia": [
+        "questions": [
           {
             "question": "What type of cloud is most often associated with thunderstorms?",
             "options": ["Cumulonimbus.", "Cirrus", "Stratus", "Altocumulus"],
@@ -712,7 +712,7 @@ const cardsData = {
         "name": "Piano",
         "damage": 200,
         "description": "Play his online piano and maybe you will find happiness. Speaking of piano, a piano falls on your enemy.",
-        "trivia": [
+        "questions": [
           {
             "question": "What is the primary gas found in Earth's atmosphere?",
             "options": ["Nitrogen", "Oxygen", "Carbon Dioxide", "Hydrogen"],
@@ -743,7 +743,7 @@ const cardsData = {
         "name": "Lie",
         "damage": 175,
         "description": "Publicly lie on the internet boosting your ego and mind.",
-        "trivia": [
+        "questions": [
           {
             "question": "What part of the brain controls balance and coordination?",
             "options": ["Cerebellum", "Cerebrum", "Brainstem", "Hypothalamus"],
@@ -770,7 +770,7 @@ const cardsData = {
         "name": "Seek Javi",
         "heal": 250,
         "description": "Find the secret javier luis terrol the kid with a plan. who loves his secret lover calisto.",
-        "trivia": [
+        "questions": [
           {
             "question": "What connects the two hemispheres of the brain?",
             "options": ["Corpus Callosum", "Medulla Oblongata", "Pons", "Thalamus"],
