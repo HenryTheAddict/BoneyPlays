@@ -177,6 +177,30 @@
       border-bottom: 2px solid #69c9d0;
     }
 
+    /* Flared Meat Theme Overrides */
+    body.flared-theme {
+      background: radial-gradient(circle at center, #4a1c1c, #1a0808);
+      --text: #ff9999;
+      --text-dim: #cc6666;
+      --line: #993333;
+    }
+    body.flared-theme .health-bars {
+      background: rgba(74, 28, 28, 0.6);
+      border-bottom: 2px solid #ff6666;
+    }
+
+    /* Stinky Man Theme Overrides */
+    body.stinky-theme {
+      background: radial-gradient(circle at center, #2e3b23, #0f140a);
+      --text: #a8c69f;
+      --text-dim: #7a966b;
+      --line: #4d6633;
+    }
+    body.stinky-theme .health-bars {
+      background: rgba(46, 59, 35, 0.6);
+      border-bottom: 2px solid #a8c69f;
+    }
+
     /* Theodore Theme Overrides */
     body.theo-theme {
       background: linear-gradient(to bottom, #1a2a3a, #0d151c);
@@ -1976,6 +2000,8 @@
       else if (activeName === 'kenly') document.body.classList.add('basketball-theme');
       else if (activeName === 'marwan') document.body.classList.add('tiktok-theme');
       else if (activeName === 'theo' || activeName === 'theodore' || activeName === 'tj') document.body.classList.add('theo-theme');
+      else if (activeName === 'flared meat') document.body.classList.add('flared-theme');
+      else if (activeName === 'stinky man') document.body.classList.add('stinky-theme');
 
       // Keep track of old health percentages to allow CSS transitions to trigger
       const oldP1Percent = board.querySelector('#p1-trail') ? board.querySelector('#p1-trail').style.width : null;
@@ -2697,8 +2723,16 @@
       
       audioSystem.startMusic();
       
-      game.players[0].label = p1Name;
-      game.players[1].label = p2Name;
+      let finalP1Name = p1Name;
+      let finalP2Name = p2Name;
+
+      if (p1Lower === 'falarmi') finalP1Name = 'flared meat';
+      if (p2Lower === 'falarmi') finalP2Name = 'flared meat';
+      if (p1Lower === 'manhattan') finalP1Name = 'Stinky Man';
+      if (p2Lower === 'manhattan') finalP2Name = 'Stinky Man';
+
+      game.players[0].label = finalP1Name;
+      game.players[1].label = finalP2Name;
       game.players[0].accent = selectedPlayerColors.p1;
       game.players[1].accent = selectedPlayerColors.p2;
       game.players[0].maxHp = startHp;
@@ -2815,6 +2849,8 @@
       const basketballEmojis = ['🏀', '⛹️‍♂️', '🏟️', '🔥'];
       const tiktokEmojis = ['📱', '🎵', '🤳', '✨', '🤍'];
       const theoEmojis = ['🌧️', '⛈️', '🎹', '🌩️', '☔️', '☁️'];
+      const flaredEmojis = ['🥩', '🔥', '🍖', '🥓', '🍴'];
+      const stinkyEmojis = ['💩', '🧦', '🧀', '🤢', '🦠'];
 
       const particles = [];
       for (let i = 0; i < 1000; i++) { // Massively increased count
@@ -2958,6 +2994,8 @@
         const isBasketballMode = document.body.classList.contains('basketball-theme');
         const isTiktokMode = document.body.classList.contains('tiktok-theme');
         const isTheoMode = document.body.classList.contains('theo-theme');
+        const isFlaredMode = document.body.classList.contains('flared-theme');
+        const isStinkyMode = document.body.classList.contains('stinky-theme');
         
         particles.forEach(p => {
           // Calculate organic opacity pulsing
@@ -2984,6 +3022,8 @@
             else if (isBasketballMode) text = p.emojiBasketball;
             else if (isTiktokMode) text = p.emojiTiktok;
             else if (isTheoMode) text = p.emojiTheo;
+            else if (isFlaredMode) text = flaredEmojis[Math.floor(Math.random() * flaredEmojis.length)];
+            else if (isStinkyMode) text = stinkyEmojis[Math.floor(Math.random() * stinkyEmojis.length)];
             ctx.fillText(text, currentX, p.y);
             ctx.restore();
           } else {
@@ -2997,6 +3037,8 @@
             else if (isBasketballMode) particleHue = (p.hue % 30) + 20;
             else if (isTiktokMode) particleHue = Math.random() > 0.5 ? 180 : 330;
             else if (isTheoMode) particleHue = (p.hue % 30) + 210; // Stormy blues
+            else if (isFlaredMode) particleHue = (p.hue % 30) + 0; // Meat reds
+            else if (isStinkyMode) particleHue = (p.hue % 40) + 80; // Mossy greens
 
             gradient.addColorStop(0, `hsla(${particleHue}, 70%, 80%, ${currentOpacity})`);
             gradient.addColorStop(0.4, `hsla(${particleHue}, 80%, 60%, ${currentOpacity * 0.8})`);
