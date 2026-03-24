@@ -1093,6 +1093,7 @@
             <option value="500">Normal (500 HP)</option>
             <option value="750">Long (750 HP)</option>
             <option value="1000">Longer (1000 HP)</option>
+            <option value="2500">Longest (2500 HP, 5 Cards)</option>
           </select>
         </div>
       </div>
@@ -1534,13 +1535,13 @@
         ];
 
         this.players = [
-          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 },
-          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 }
+          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3 },
+          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3 }
         ];
 
         // Draw initial hands now that player objects exist
-        this.players[0].hand = this.randomCards(3, "p1");
-        this.players[1].hand = this.randomCards(3, "p2");
+        this.players[0].hand = this.randomCards(this.players[0].handSize, "p1");
+        this.players[1].hand = this.randomCards(this.players[1].handSize, "p2");
 
         this.currentTurn = "p1";
         
@@ -1746,10 +1747,10 @@
           player.hand.splice(cardIndex, 1);
         }
         
-        // Draw a new card if under the limit of 3
-        if (player.hand.length < 3) {
-          const cardsNeeded = 3 - player.hand.length;
-          // But if they were cursed (lost cards due to enemy action), they only draw 1 per turn back up to 3
+        // Draw a new card if under the limit
+        if (player.hand.length < player.handSize) {
+          const cardsNeeded = player.handSize - player.hand.length;
+          // But if they were cursed (lost cards due to enemy action), they only draw 1 per turn back up to the limit
           // We'll enforce a strict draw of 1 card per turn to make curses impactful.
           player.hand.push(...this.randomCards(1, playerKey));
         }
@@ -2313,21 +2314,8 @@
         const msg = game.applyActionEffect(playerKey, action);
         showBattleLog(msg);
         
-        // Ensure SomeGirl card usage tracking is isolated strictly to the instance ID
-        // and doesn't bleed over if they somehow draw a second one later
-        if (card.name === 'SomeGirl') {
-          // Store usage state uniquely on the card instance itself, not globally
-          if (typeof card.instanceUses === 'undefined') card.instanceUses = 0;
-          card.instanceUses++;
-          if (card.instanceUses >= 2) {
-             card.isExpended = true;
-          } else {
-             card.isExpended = false; // Still has uses left
-             card.fadeLevel = 1; // Visual indicator
-          }
-        } else {
-          card.isExpended = true;
-        }
+        // Most cards are single-use.
+        card.isExpended = true;
         
         if (status) status.textContent = `${card.name} used!`;
       } else {
@@ -2359,7 +2347,7 @@
         });
       }
 
-      // Most cards are single-use, except SomeGirl which can be used 2 times.
+      // Most cards are single-use.
       // If it doesn't have isExpended explicitly set to false, it is removed.
       const isExpended = typeof card.isExpended !== 'undefined' ? card.isExpended : true;
       const poisonMessage = game.endTurn(playerKey, card.id, isExpended);
@@ -2717,6 +2705,14 @@
       game.players[0].hp = startHp;
       game.players[1].maxHp = startHp;
       game.players[1].hp = startHp;
+
+      if (startHp === 2500) {
+        game.players[0].handSize = 5;
+        game.players[1].handSize = 5;
+        // Redraw initial hands with new size
+        game.players[0].hand = game.randomCards(5, "p1");
+        game.players[1].hand = game.randomCards(5, "p2");
+      }
       
       document.getElementById('name-setup').style.display = 'none';
       document.body.removeAttribute('data-screen'); // Remove setup screen background animation
