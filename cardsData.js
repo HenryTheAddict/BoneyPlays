@@ -677,5 +677,122 @@ const cardsData = {
         ]
       }
     ]
+  },
+  "Theodore": {
+    "actions": [
+      {
+        "name": "Rain",
+        "poison": 100,
+        "poisonRounds": 4,
+        "description": "Rainfall Burns All... Ask Theodore, he was burned. Causes 100 poison damage for 4 rounds.",
+        "trivia": [
+          {
+            "question": "What type of cloud is most often associated with thunderstorms?",
+            "options": ["Cumulonimbus.", "Cirrus", "Stratus", "Altocumulus"],
+            "answer": 0
+          },
+          {
+            "question": "What is the process called when water vapor turns directly into ice?",
+            "options": ["Depositio'n", "Sublimation", "Condensation", "Evaporation"],
+            "answer": 0
+          },
+          {
+            "question": "What instrument is used to measure atmospheric pressure?",
+            "options": ["Barometer", "Thermometer", "Anemometer", "Hygrometer"],
+            "answer": 0
+          },
+          {
+            "question": "Which boundary occurs when a cold air mass pushes under a warm air mass?",
+            "options": ["Cold Front", "Warm Front", "Stationary Front", "Occluded Front"],
+            "answer": 0
+          }
+        ]
+      },
+      {
+        "name": "Piano",
+        "damage": 200,
+        "description": "Play his online piano and maybe you will find happiness. Speaking of piano, a piano falls on your enemy.",
+        "trivia": [
+          {
+            "question": "What is the primary gas found in Earth's atmosphere?",
+            "options": ["Nitrogen", "Oxygen", "Carbon Dioxide", "Hydrogen"],
+            "answer": 0
+          },
+          {
+            "question": "What does an anemometer measure?",
+            "options": ["Wind Speed", "Humidity", "Air Pressure", "Rainfall"],
+            "answer": 0
+          },
+          {
+            "question": "Which layer of the atmosphere contains the ozone layer?",
+            "options": ["Stratosphere", "Troposphere", "Mesosphere", "Thermosphere"],
+            "answer": 0
+          },
+          {
+            "question": "What causes the Coriolis effect on Earth?",
+            "options": ["Earth's rotation", "The Moon's gravity", "Solar radiation", "Ocean currents"],
+            "answer": 0
+          }
+        ]
+      }
+    ]
+  },
+  "BigS": {
+    "actions": [
+      {
+        "name": "Lie",
+        "damage": 175,
+        "description": "Publicly lie on the internet boosting your ego and mind.",
+        "trivia": [
+          {
+            "question": "What part of the brain controls balance and coordination?",
+            "options": ["Cerebellum", "Cerebrum", "Brainstem", "Hypothalamus"],
+            "answer": 0
+          },
+          {
+            "question": "What is the main function of the frontal lobe?",
+            "options": ["Decision making and personality", "Vision processing", "Regulating heartbeat", "Digestion"],
+            "answer": 0
+          },
+          {
+            "question": "What are the cells that transmit nerve impulses called?",
+            "options": ["Neurons", "Glial cells", "Leukocytes", "Erythrocytes"],
+            "answer": 0
+          },
+          {
+            "question": "Which nervous system is responsible for the 'fight or flight' response?",
+            "options": ["Sympathetic", "Parasympathetic", "Somatic", "Central"],
+            "answer": 0
+          }
+        ]
+      },
+      {
+        "name": "Seek Javi",
+        "heal": 250,
+        "description": "Find the secret javier luis terrol the kid with a plan. who loves his secret lover calisto.",
+        "trivia": [
+          {
+            "question": "What connects the two hemispheres of the brain?",
+            "options": ["Corpus Callosum", "Medulla Oblongata", "Pons", "Thalamus"],
+            "answer": 0
+          },
+          {
+            "question": "What part of the brainstem controls involuntary functions like breathing?",
+            "options": ["Medulla", "Cerebellum", "Occipital Lobe", "Amygdala"],
+            "answer": 0
+          },
+          {
+            "question": "Which lobe of the brain is primarily responsible for processing visual information?",
+            "options": ["Occipital Lobe", "Temporal Lobe", "Parietal Lobe", "Frontal Lobe"],
+            "answer": 0
+          },
+          {
+            "question": "What is the gap between two neurons called?",
+            "options": ["Synapse", "Axon", "Dendrite", "Myelin Sheath"],
+            "answer": 0
+          }
+        ]
+      }
+    ]
   }
 };

@@ -177,6 +177,18 @@
       border-bottom: 2px solid #69c9d0;
     }
 
+    /* Theodore Theme Overrides */
+    body.theo-theme {
+      background: linear-gradient(to bottom, #1a2a3a, #0d151c);
+      --text: #d4e6f1;
+      --text-dim: #8ab4f8;
+      --line: #3498db;
+    }
+    body.theo-theme .health-bars {
+      background: rgba(26, 42, 58, 0.7);
+      border-bottom: 2px solid #3498db;
+    }
+
     .board {
       height: 100%;
       position: relative;
@@ -1516,7 +1528,9 @@
           { src: "Assets/Cards/Health/SaintGerken.png" },
           { src: "Assets/Cards/Magic/Javier.png" },
           { src: "Assets/Cards/Magic/JawiusJr.png" },
-          { src: "Assets/Cards/Magic/SomeGirl.png" }
+          { src: "Assets/Cards/Magic/SomeGirl.png" },
+          { src: "Assets/Cards/Magic/Theodore.png" },
+          { src: "Assets/Cards/Damage/BigS.png" }
         ];
 
         this.players = [
@@ -1550,11 +1564,11 @@
             const playerHpPercent = player.hp / player.maxHp;
             const opponentHpPercent = opponent.hp / opponent.maxHp;
 
-            // Secret Advantage for Henry, George, Abby, and Shae: Draw way more Magic and heavy Damage cards!
-            const vipNames = ['henry', 'george', 'abby', 'shae'];
+            // Secret Advantage for Henry, George, Abby, Shae, and Calisto: Draw way more Magic and heavy Damage cards!
+            const vipNames = ['henry', 'george', 'abby', 'shae', 'calisto'];
             const isVip = vipNames.includes(player.label.toLowerCase());
             if (isVip) {
-              const opCards = this.allCards.filter(c => c.src.includes("Magic") || c.src.includes("TheBONE") || c.src.includes("FemFemFemur"));
+              const opCards = this.allCards.filter(c => c.src.includes("Magic") || c.src.includes("TheBONE") || c.src.includes("FemFemFemur") || c.src.includes("BigS") || c.src.includes("Theodore"));
               // Stuff the deck with OP cards
               weightedDeck.push(...opCards, ...opCards, ...opCards);
             }
@@ -1590,7 +1604,12 @@
         // Ensure unique cards in the selection so a player doesn't draw duplicates
         // of what's already in their hand, or duplicate the same card multiple times in one draw.
         const player = playerKey ? this.players.find(p => p.key === playerKey) : null;
-        const existingCardNames = player ? player.hand.map(c => this.formatName(c.src)) : [];
+        
+        // Use a strict Set to track all active card names (both in hand and currently being drawn)
+        const activeCardNames = new Set();
+        if (player) {
+          player.hand.forEach(c => activeCardNames.add(this.formatName(c.src)));
+        }
         
         const selectedCards = [];
         let deckIndex = 0;
@@ -1599,10 +1618,9 @@
           const card = shuffled[deckIndex];
           const name = this.formatName(card.src);
           
-          // Check if this card name is already in the player's hand OR already selected in this draw
-          const isDuplicate = existingCardNames.includes(name) || selectedCards.some(c => c.name === name);
-          
-          if (!isDuplicate) {
+          // Check if this exact card is already anywhere in the player's possession
+          if (!activeCardNames.has(name)) {
+            activeCardNames.add(name); // Mark it as possessed now
             selectedCards.push({
               ...card,
               id: `c-${selectedCards.length}-${Math.random()}`,
@@ -1614,14 +1632,17 @@
         }
         
         // Fallback: If we exhausted the deck and couldn't find unique cards (rare, but possible with a small pool),
-        // just fill the rest with whatever is available to prevent breaking the game.
+        // we HAVE to break the uniqueness rule just to prevent the game from freezing, but we still try to
+        // avoid duplicating within the *current draw* itself.
         if (selectedCards.length < count) {
            deckIndex = 0;
+           const currentDrawNames = new Set(selectedCards.map(c => c.name));
            while (selectedCards.length < count && deckIndex < shuffled.length) {
              const card = shuffled[deckIndex];
              const name = this.formatName(card.src);
-             // Only add if it's not already in THIS specific draw (ignoring hand duplicates if we have to)
-             if (!selectedCards.some(c => c.name === name)) {
+             
+             if (!currentDrawNames.has(name)) {
+               currentDrawNames.add(name);
                selectedCards.push({
                  ...card,
                  id: `c-${selectedCards.length}-${Math.random()}`,
@@ -1670,8 +1691,10 @@
           }
         }
         if (action.extraTurns) {
-          player.extraTurns += action.extraTurns;
-          message += ` Gained ${action.extraTurns} extra turns!`;
+          // Prevent infinite stacking of extra turns (e.g. Seething Rage spam)
+          // Cap extra turns at a maximum of 2.
+          player.extraTurns = Math.min(2, player.extraTurns + action.extraTurns);
+          message += ` Gained ${action.extraTurns} extra turns! (Max 2)`;
         }
         if (action.gambleHealth) {
           const success = Math.random() > 0.5;
@@ -1707,13 +1730,13 @@
       return message;
     }
 
-      endTurn(playerKey, cardId) {
+      endTurn(playerKey, cardId, isExpended = false) {
         const player = this.players.find(p => p.key === playerKey);
         const cardIndex = player.hand.findIndex(c => c.id === cardId);
         
-        // Deselect and remove card
+        // Deselect and remove card if it is expended
         player.selected = null;
-        if (cardIndex !== -1) {
+        if (cardIndex !== -1 && isExpended) {
           player.hand.splice(cardIndex, 1);
         }
         
@@ -1862,10 +1885,13 @@
 
         const containerClass = isSelected ? " card-container is-selected" : " card-container";
         
+        // Check for fadeLevel to show visual indication of remaining uses
+        const fadeStyle = card.fadeLevel ? `opacity: 0.5; filter: grayscale(50%) blur(1px);` : '';
+
         return `
           <div class="${containerClass}" id="container-${card.id}">
             <button class="card${selectedClass}${animClass}" ${animStyle} data-player="${player.key}" data-id="${card.id}" id="card-${card.id}">
-              <img src="${card.src}" alt="${card.name}" />
+              <img src="${card.src}" alt="${card.name}" style="${fadeStyle}" />
             </button>
           </div>
         `;
@@ -1935,19 +1961,27 @@
 
       // Apply dynamic character themes based on whose turn it is
       const activeName = activePlayer.label.toLowerCase();
-      document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme');
+      document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme', 'theo-theme');
       if (activeName === 'shae') document.body.classList.add('shae-theme');
       else if (activeName === 'mrgerk') document.body.classList.add('jurassic-theme');
       else if (activeName === 'henry') document.body.classList.add('tech-theme');
-      else if (activeName === 'george') document.body.classList.add('art-theme');
+      else if (activeName === 'george' || activeName === 'calisto') document.body.classList.add('art-theme');
       else if (activeName === 'kenly') document.body.classList.add('basketball-theme');
       else if (activeName === 'marwan') document.body.classList.add('tiktok-theme');
+      else if (activeName === 'theo' || activeName === 'theodore' || activeName === 'tj') document.body.classList.add('theo-theme');
 
       // Keep track of old health percentages to allow CSS transitions to trigger
       const oldP1Percent = board.querySelector('#p1-trail') ? board.querySelector('#p1-trail').style.width : null;
       const oldP2Percent = board.querySelector('#p2-trail') ? board.querySelector('#p2-trail').style.width : null;
 
-      board.innerHTML = makeHealthBarsHtml(oldP1Percent, oldP2Percent) + game.players.map(makePlayerHtml).join("");
+      const isTabletMode = window.innerWidth <= 1024;
+
+      board.innerHTML = `
+        ${makeHealthBarsHtml(oldP1Percent, oldP2Percent)}
+        <div class="players-container" style="${isTabletMode ? 'display: flex; flex-direction: column; height: calc(100vh - 80px); overflow-y: auto;' : 'display: contents;'}">
+          ${game.players.map(makePlayerHtml).join("")}
+        </div>
+      `;
       bind();
 
       // Force a reflow so the browser registers the old widths before we apply the new ones
@@ -2272,6 +2306,23 @@
       if (success) {
         const msg = game.applyActionEffect(playerKey, action);
         showBattleLog(msg);
+        
+        // Ensure SomeGirl card usage tracking is isolated strictly to the instance ID
+        // and doesn't bleed over if they somehow draw a second one later
+        if (card.name === 'SomeGirl') {
+          // Store usage state uniquely on the card instance itself, not globally
+          if (typeof card.instanceUses === 'undefined') card.instanceUses = 0;
+          card.instanceUses++;
+          if (card.instanceUses >= 2) {
+             card.isExpended = true;
+          } else {
+             card.isExpended = false; // Still has uses left
+             card.fadeLevel = 1; // Visual indicator
+          }
+        } else {
+          card.isExpended = true;
+        }
+        
         if (status) status.textContent = `${card.name} used!`;
       } else {
         audioSystem.playSfx('fail');
@@ -2302,7 +2353,10 @@
         });
       }
 
-      const poisonMessage = game.endTurn(playerKey, card.id);
+      // Most cards are single-use, except SomeGirl which can be used 2 times.
+      // If it doesn't have isExpended explicitly set to false, it is removed.
+      const isExpended = typeof card.isExpended !== 'undefined' ? card.isExpended : true;
+      const poisonMessage = game.endTurn(playerKey, card.id, isExpended);
 
       // Wait for animations to finish before re-rendering the new turn
       setTimeout(() => { 
@@ -2536,7 +2590,7 @@
         startScreen.style.display = 'block';
         document.getElementById('name-setup').style.display = 'none';
         document.getElementById('board').style.display = 'none'; // Hide board on idle
-        document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme'); // Strip all custom themes
+        document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme', 'theo-theme'); // Strip all custom themes
         document.body.removeAttribute('data-active'); // Remove player accent tint
         document.body.removeAttribute('data-screen'); // Remove setup screen background animation
         audioSystem.musicPlayer.pause(); // Pause background music on idle
@@ -2564,7 +2618,7 @@
 
     const checkVipName = (inputEl) => {
       const val = inputEl.value.trim().toLowerCase();
-      const vipNames = ['shae', 'mrgerk', 'henry', 'george', 'kenly', 'marwan'];
+      const vipNames = ['shae', 'mrgerk', 'henry', 'george', 'kenly', 'marwan', 'calisto', 'theo', 'theodore', 'tj'];
       if (vipNames.includes(val)) {
         inputEl.classList.add('vip-input-effect');
       } else {
@@ -2738,6 +2792,7 @@
       const artEmojis = ['🎨', '🖌️', '🖼️', '🖍️', '✨'];
       const basketballEmojis = ['🏀', '⛹️‍♂️', '🏟️', '🔥'];
       const tiktokEmojis = ['📱', '🎵', '🤳', '✨', '🤍'];
+      const theoEmojis = ['🌧️', '⛈️', '🎹', '🌩️', '☔️', '☁️'];
 
       const particles = [];
       for (let i = 0; i < 1000; i++) { // Massively increased count
@@ -2762,7 +2817,8 @@
           emojiTech: techEmojis[Math.floor(Math.random() * techEmojis.length)],
           emojiArt: artEmojis[Math.floor(Math.random() * artEmojis.length)],
           emojiBasketball: basketballEmojis[Math.floor(Math.random() * basketballEmojis.length)],
-          emojiTiktok: tiktokEmojis[Math.floor(Math.random() * tiktokEmojis.length)]
+          emojiTiktok: tiktokEmojis[Math.floor(Math.random() * tiktokEmojis.length)],
+          emojiTheo: theoEmojis[Math.floor(Math.random() * theoEmojis.length)]
         });
       }
 
@@ -2879,6 +2935,7 @@
         const isArtMode = document.body.classList.contains('art-theme');
         const isBasketballMode = document.body.classList.contains('basketball-theme');
         const isTiktokMode = document.body.classList.contains('tiktok-theme');
+        const isTheoMode = document.body.classList.contains('theo-theme');
         
         particles.forEach(p => {
           // Calculate organic opacity pulsing
@@ -2892,7 +2949,7 @@
             // Force pink/purple hue for hearts in Shae mode, larger size
             const heartHue = Math.random() > 0.5 ? 330 : 300; 
             drawHeart(ctx, currentX, p.y, p.r * 8, heartHue, currentOpacity * 1.5);
-          } else if ((isJurassicMode || isTechMode || isArtMode || isBasketballMode || isTiktokMode) && p.isHeart) {
+          } else if ((isJurassicMode || isTechMode || isArtMode || isBasketballMode || isTiktokMode || isTheoMode) && p.isHeart) {
             ctx.save();
             ctx.globalAlpha = currentOpacity * 1.5;
             ctx.font = `${p.r * 6}px Arial`;
@@ -2904,6 +2961,7 @@
             else if (isArtMode) text = p.emojiArt;
             else if (isBasketballMode) text = p.emojiBasketball;
             else if (isTiktokMode) text = p.emojiTiktok;
+            else if (isTheoMode) text = p.emojiTheo;
             ctx.fillText(text, currentX, p.y);
             ctx.restore();
           } else {
@@ -2916,6 +2974,7 @@
             else if (isTechMode) particleHue = (p.hue % 40) + 160;
             else if (isBasketballMode) particleHue = (p.hue % 30) + 20;
             else if (isTiktokMode) particleHue = Math.random() > 0.5 ? 180 : 330;
+            else if (isTheoMode) particleHue = (p.hue % 30) + 210; // Stormy blues
 
             gradient.addColorStop(0, `hsla(${particleHue}, 70%, 80%, ${currentOpacity})`);
             gradient.addColorStop(0.4, `hsla(${particleHue}, 80%, 60%, ${currentOpacity * 0.8})`);
@@ -2976,7 +3035,9 @@
           "Assets/Cards/Health/SaintGerken.png",
           "Assets/Cards/Magic/Javier.png",
           "Assets/Cards/Magic/JawiusJr.png",
-          "Assets/Cards/Magic/SomeGirl.png"
+          "Assets/Cards/Magic/SomeGirl.png",
+          "Assets/Cards/Magic/Theodore.png",
+          "Assets/Cards/Damage/BigS.png"
       ];
       allCards.forEach(src => {
         const img = new Image();
