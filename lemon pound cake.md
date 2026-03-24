@@ -22,3 +22,38 @@
 8. **Cool:** Let the cake cool in the pan for about 10 minutes, then turn it out onto a wire rack to cool completely.
 
 Enjoy your delicious Lemon Pound Cake!
+
+`The Adams County Sheriff kicked down my door
+Then I heard the glass break
+They found no kidnapping victims
+Just some lemon pound cake
+Mama's lemon pound cake
+It tastes so nice
+It made the sheriff wanna put down his gun
+And cut him a slice (of what? Of what?)
+Lemon pound cake
+He wanna put down his Glock
+Lemon pound cake
+Trending on TikTok
+Lemon pound cake
+He's a family guy
+Lemon pound cake
+Got the munchies because he got high
+Lemon pound cake, pound cake
+He's a Adams County Sheriff
+He's hungry and he's big as hell (mmm-hmm)
+He was sniffing for weed
+Then he smelled another smell (what was that?)
+Mama's lemon pound cake
+It tastes so nice
+It made the sheriff wanna put down his gun
+And cut him a slice (of what? Of what?)
+Lemon pound cake
+He wanna put down his Glock
+Lemon pound cake
+Trending on TikTok
+Lemon pound cake
+He's a family guy
+Lemon pound cake
+Got the munchies because he got high
+Lemon pound cake, pound cake`
