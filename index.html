@@ -177,6 +177,30 @@
       border-bottom: 2px solid #69c9d0;
     }
 
+    /* Flared Meat Theme Overrides */
+    body.flared-theme {
+      background: radial-gradient(circle at center, #4a1c1c, #1a0808);
+      --text: #ff9999;
+      --text-dim: #cc6666;
+      --line: #993333;
+    }
+    body.flared-theme .health-bars {
+      background: rgba(74, 28, 28, 0.6);
+      border-bottom: 2px solid #ff6666;
+    }
+
+    /* Stinky Man Theme Overrides */
+    body.stinky-theme {
+      background: radial-gradient(circle at center, #2e3b23, #0f140a);
+      --text: #a8c69f;
+      --text-dim: #7a966b;
+      --line: #4d6633;
+    }
+    body.stinky-theme .health-bars {
+      background: rgba(46, 59, 35, 0.6);
+      border-bottom: 2px solid #a8c69f;
+    }
+
     /* Theodore Theme Overrides */
     body.theo-theme {
       background: linear-gradient(to bottom, #1a2a3a, #0d151c);
@@ -1093,6 +1117,7 @@
             <option value="500">Normal (500 HP)</option>
             <option value="750">Long (750 HP)</option>
             <option value="1000">Longer (1000 HP)</option>
+            <option value="2500">Longest (2500 HP, 5 Cards)</option>
           </select>
         </div>
       </div>
@@ -1181,11 +1206,11 @@
       <h2>Settings</h2>
       <div class="input-group" style="margin-bottom: 1.5rem; text-align: left;">
         <label for="music-volume">Music Volume</label>
-        <input type="range" id="music-volume" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+        <input type="range" id="music-volume" min="0" max="100" step="1" value="50" style="width: 100%;">
       </div>
       <div class="input-group" style="margin-bottom: 1.5rem; text-align: left;">
         <label for="sfx-volume">SFX Volume</label>
-        <input type="range" id="sfx-volume" min="0" max="1" step="0.05" value="0.8" style="width: 100%;">
+        <input type="range" id="sfx-volume" min="0" max="100" step="1" value="80" style="width: 100%;">
       </div>
       <div class="input-group" style="margin-bottom: 1.5rem; text-align: left; flex-direction: row; align-items: center; gap: 1rem;">
         <input type="checkbox" id="performance-mode" style="width: 1.5rem; height: 1.5rem; cursor: pointer;">
@@ -1296,11 +1321,11 @@
         
         if (savedMusic !== null) {
           this.musicVolume = parseFloat(savedMusic);
-          document.getElementById('music-volume').value = this.musicVolume;
+          document.getElementById('music-volume').value = this.musicVolume * 100;
         }
         if (savedSfx !== null) {
           this.sfxVolume = parseFloat(savedSfx);
-          document.getElementById('sfx-volume').value = this.sfxVolume;
+          document.getElementById('sfx-volume').value = this.sfxVolume * 100;
         }
         this.silentMode = savedSilentMode === '1';
         const silentModeToggle = document.getElementById('silent-mode-toggle');
@@ -1392,13 +1417,13 @@
     });
     
     document.getElementById('music-volume').addEventListener('input', (e) => {
-      audioSystem.musicVolume = parseFloat(e.target.value);
+      audioSystem.musicVolume = parseFloat(e.target.value) / 100;
       audioSystem.updateVolumes();
       audioSystem.saveSettings();
     });
 
     document.getElementById('sfx-volume').addEventListener('input', (e) => {
-      audioSystem.sfxVolume = parseFloat(e.target.value);
+      audioSystem.sfxVolume = parseFloat(e.target.value) / 100;
       audioSystem.updateVolumes();
       audioSystem.saveSettings();
     });
@@ -1534,13 +1559,13 @@
         ];
 
         this.players = [
-          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 },
-          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0 }
+          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3 },
+          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3 }
         ];
 
         // Draw initial hands now that player objects exist
-        this.players[0].hand = this.randomCards(3, "p1");
-        this.players[1].hand = this.randomCards(3, "p2");
+        this.players[0].hand = this.randomCards(this.players[0].handSize, "p1");
+        this.players[1].hand = this.randomCards(this.players[1].handSize, "p2");
 
         this.currentTurn = "p1";
         
@@ -1746,10 +1771,10 @@
           player.hand.splice(cardIndex, 1);
         }
         
-        // Draw a new card if under the limit of 3
-        if (player.hand.length < 3) {
-          const cardsNeeded = 3 - player.hand.length;
-          // But if they were cursed (lost cards due to enemy action), they only draw 1 per turn back up to 3
+        // Draw a new card if under the limit
+        if (player.hand.length < player.handSize) {
+          const cardsNeeded = player.handSize - player.hand.length;
+          // But if they were cursed (lost cards due to enemy action), they only draw 1 per turn back up to the limit
           // We'll enforce a strict draw of 1 card per turn to make curses impactful.
           player.hand.push(...this.randomCards(1, playerKey));
         }
@@ -1927,7 +1952,9 @@
         const targetX = sectionRect.width / 2;
         const targetY = sectionRect.height * 0.45; 
 
-        player.hand.forEach(card => {
+        const totalCards = player.hand.length;
+
+        player.hand.forEach((card, index) => {
           const cardEl = document.getElementById(`card-${card.id}`);
           const containerEl = document.getElementById(`container-${card.id}`);
           if (!cardEl || !containerEl) return;
@@ -1952,9 +1979,18 @@
             const dynamicScale = Math.min(1.0, Math.max(0.3, targetHeight / 1143)); 
 
             cardEl.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${dynamicScale})`;
+            cardEl.style.zIndex = "100"; // Selected card overlaps everything
           } else {
             // Unselected scale is 0.175 (140px width / 800px base width)
-            cardEl.style.transform = `translate(0, 0) scale(0.175)`;
+
+            // Calculate rotation based on index relative to center
+            const centerIndex = (totalCards - 1) / 2;
+            const relativePos = index - centerIndex;
+            const rotation = relativePos * 5; // 5 degrees per card away from center
+            const translateY = Math.abs(relativePos) * 10; // Slight arch effect
+
+            cardEl.style.transform = `translate(0, ${translateY}px) scale(0.175) rotate(${rotation}deg)`;
+            cardEl.style.zIndex = "1"; // Reset z-index
           }
         });
       });
@@ -1975,6 +2011,8 @@
       else if (activeName === 'kenly') document.body.classList.add('basketball-theme');
       else if (activeName === 'marwan') document.body.classList.add('tiktok-theme');
       else if (activeName === 'theo' || activeName === 'theodore' || activeName === 'tj') document.body.classList.add('theo-theme');
+      else if (activeName === 'flared meat') document.body.classList.add('flared-theme');
+      else if (activeName === 'stinky man') document.body.classList.add('stinky-theme');
 
       // Keep track of old health percentages to allow CSS transitions to trigger
       const oldP1Percent = board.querySelector('#p1-trail') ? board.querySelector('#p1-trail').style.width : null;
@@ -2313,21 +2351,8 @@
         const msg = game.applyActionEffect(playerKey, action);
         showBattleLog(msg);
         
-        // Ensure SomeGirl card usage tracking is isolated strictly to the instance ID
-        // and doesn't bleed over if they somehow draw a second one later
-        if (card.name === 'SomeGirl') {
-          // Store usage state uniquely on the card instance itself, not globally
-          if (typeof card.instanceUses === 'undefined') card.instanceUses = 0;
-          card.instanceUses++;
-          if (card.instanceUses >= 2) {
-             card.isExpended = true;
-          } else {
-             card.isExpended = false; // Still has uses left
-             card.fadeLevel = 1; // Visual indicator
-          }
-        } else {
-          card.isExpended = true;
-        }
+        // Most cards are single-use.
+        card.isExpended = true;
         
         if (status) status.textContent = `${card.name} used!`;
       } else {
@@ -2359,7 +2384,7 @@
         });
       }
 
-      // Most cards are single-use, except SomeGirl which can be used 2 times.
+      // Most cards are single-use.
       // If it doesn't have isExpended explicitly set to false, it is removed.
       const isExpended = typeof card.isExpended !== 'undefined' ? card.isExpended : true;
       const poisonMessage = game.endTurn(playerKey, card.id, isExpended);
@@ -2709,14 +2734,30 @@
       
       audioSystem.startMusic();
       
-      game.players[0].label = p1Name;
-      game.players[1].label = p2Name;
+      let finalP1Name = p1Name;
+      let finalP2Name = p2Name;
+
+      if (p1Lower === 'falarmi') finalP1Name = 'flared meat';
+      if (p2Lower === 'falarmi') finalP2Name = 'flared meat';
+      if (p1Lower === 'manhattan') finalP1Name = 'Stinky Man';
+      if (p2Lower === 'manhattan') finalP2Name = 'Stinky Man';
+
+      game.players[0].label = finalP1Name;
+      game.players[1].label = finalP2Name;
       game.players[0].accent = selectedPlayerColors.p1;
       game.players[1].accent = selectedPlayerColors.p2;
       game.players[0].maxHp = startHp;
       game.players[0].hp = startHp;
       game.players[1].maxHp = startHp;
       game.players[1].hp = startHp;
+
+      if (startHp === 2500) {
+        game.players[0].handSize = 5;
+        game.players[1].handSize = 5;
+        // Redraw initial hands with new size
+        game.players[0].hand = game.randomCards(5, "p1");
+        game.players[1].hand = game.randomCards(5, "p2");
+      }
       
       document.getElementById('name-setup').style.display = 'none';
       document.body.removeAttribute('data-screen'); // Remove setup screen background animation
@@ -2819,6 +2860,8 @@
       const basketballEmojis = ['🏀', '⛹️‍♂️', '🏟️', '🔥'];
       const tiktokEmojis = ['📱', '🎵', '🤳', '✨', '🤍'];
       const theoEmojis = ['🌧️', '⛈️', '🎹', '🌩️', '☔️', '☁️'];
+      const flaredEmojis = ['🥩', '🔥', '🍖', '🥓', '🍴'];
+      const stinkyEmojis = ['💩', '🧦', '🧀', '🤢', '🦠'];
 
       const particles = [];
       for (let i = 0; i < 1000; i++) { // Massively increased count
@@ -2844,7 +2887,9 @@
           emojiArt: artEmojis[Math.floor(Math.random() * artEmojis.length)],
           emojiBasketball: basketballEmojis[Math.floor(Math.random() * basketballEmojis.length)],
           emojiTiktok: tiktokEmojis[Math.floor(Math.random() * tiktokEmojis.length)],
-          emojiTheo: theoEmojis[Math.floor(Math.random() * theoEmojis.length)]
+          emojiTheo: theoEmojis[Math.floor(Math.random() * theoEmojis.length)],
+          emojiFlared: flaredEmojis[Math.floor(Math.random() * flaredEmojis.length)],
+          emojiStinky: stinkyEmojis[Math.floor(Math.random() * stinkyEmojis.length)]
         });
       }
 
@@ -2962,6 +3007,8 @@
         const isBasketballMode = document.body.classList.contains('basketball-theme');
         const isTiktokMode = document.body.classList.contains('tiktok-theme');
         const isTheoMode = document.body.classList.contains('theo-theme');
+        const isFlaredMode = document.body.classList.contains('flared-theme');
+        const isStinkyMode = document.body.classList.contains('stinky-theme');
         
         particles.forEach(p => {
           // Calculate organic opacity pulsing
@@ -2988,6 +3035,8 @@
             else if (isBasketballMode) text = p.emojiBasketball;
             else if (isTiktokMode) text = p.emojiTiktok;
             else if (isTheoMode) text = p.emojiTheo;
+            else if (isFlaredMode) text = p.emojiFlared;
+            else if (isStinkyMode) text = p.emojiStinky;
             ctx.fillText(text, currentX, p.y);
             ctx.restore();
           } else {
@@ -3001,6 +3050,8 @@
             else if (isBasketballMode) particleHue = (p.hue % 30) + 20;
             else if (isTiktokMode) particleHue = Math.random() > 0.5 ? 180 : 330;
             else if (isTheoMode) particleHue = (p.hue % 30) + 210; // Stormy blues
+            else if (isFlaredMode) particleHue = (p.hue % 30) + 0; // Meat reds
+            else if (isStinkyMode) particleHue = (p.hue % 40) + 80; // Mossy greens
 
             gradient.addColorStop(0, `hsla(${particleHue}, 70%, 80%, ${currentOpacity})`);
             gradient.addColorStop(0.4, `hsla(${particleHue}, 80%, 60%, ${currentOpacity * 0.8})`);

@@ -679,6 +679,7 @@ const cardsData = {
     ]
   },
   "Theodore": {
+    "type": "Magic",
     "actions": [
       {
         "name": "Rain",
@@ -704,6 +705,16 @@ const cardsData = {
           {
             "question": "Which boundary occurs when a cold air mass pushes under a warm air mass?",
             "options": ["Cold Front", "Warm Front", "Stationary Front", "Occluded Front"],
+            "answer": 0
+          },
+          {
+            "question": "What is the process of water falling from clouds called?",
+            "options": ["Precipitation", "Evaporation", "Condensation", "Transpiration"],
+            "answer": 0
+          },
+          {
+            "question": "What is the measure of moisture in the air?",
+            "options": ["Humidity", "Temperature", "Pressure", "Wind"],
             "answer": 0
           }
         ]
@@ -732,12 +743,23 @@ const cardsData = {
             "question": "What causes the Coriolis effect on Earth?",
             "options": ["Earth's rotation", "The Moon's gravity", "Solar radiation", "Ocean currents"],
             "answer": 0
+          },
+          {
+            "question": "Which layer of the atmosphere is closest to Earth?",
+            "options": ["Troposphere", "Stratosphere", "Mesosphere", "Thermosphere"],
+            "answer": 0
+          },
+          {
+            "question": "What is a scientist who studies weather called?",
+            "options": ["Meteorologist", "Geologist", "Biologist", "Astronomer"],
+            "answer": 0
           }
         ]
       }
     ]
   },
   "BigS": {
+    "type": "Damage",
     "actions": [
       {
         "name": "Lie",
@@ -762,6 +784,16 @@ const cardsData = {
           {
             "question": "Which nervous system is responsible for the 'fight or flight' response?",
             "options": ["Sympathetic", "Parasympathetic", "Somatic", "Central"],
+            "answer": 0
+          },
+          {
+            "question": "Which part of the brain is the largest?",
+            "options": ["Cerebrum", "Cerebellum", "Brainstem", "Thalamus"],
+            "answer": 0
+          },
+          {
+            "question": "What is the basic building block of the nervous system?",
+            "options": ["Neuron", "Axon", "Dendrite", "Synapse"],
             "answer": 0
           }
         ]
@@ -789,6 +821,16 @@ const cardsData = {
           {
             "question": "What is the gap between two neurons called?",
             "options": ["Synapse", "Axon", "Dendrite", "Myelin Sheath"],
+            "answer": 0
+          },
+          {
+            "question": "Which lobe is responsible for hearing?",
+            "options": ["Temporal Lobe", "Frontal Lobe", "Occipital Lobe", "Parietal Lobe"],
+            "answer": 0
+          },
+          {
+            "question": "What is the protective covering of the brain and spinal cord?",
+            "options": ["Meninges", "Skull", "Vertebrae", "Skin"],
             "answer": 0
           }
         ]
