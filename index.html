@@ -1080,9 +1080,24 @@
       pointer-events: none;
       transition: opacity 0.3s;
     }
+    
+    #oney-bg-video {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      pointer-events: none;
+      z-index: -1;
+      display: none;
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
+  <!-- OneyPlays Video Background -->
+  <video id="oney-bg-video" src="Assets/other/UI/oney.mp4" playsinline></video>
+
   <div id="start-screen">
     <div id="slideshow-container"></div>
     <div class="tap-to-play">Tap to Play</div>
@@ -1555,12 +1570,14 @@
           { src: "Assets/Cards/Magic/JawiusJr.png" },
           { src: "Assets/Cards/Magic/SomeGirl.png" },
           { src: "Assets/Cards/Magic/Theodore.png" },
-          { src: "Assets/Cards/Damage/BigS.png" }
+          { src: "Assets/Cards/Damage/BigS.png" },
+          { src: "Assets/Cards/Damage/OneyPlays.png" },
+          { src: "Assets/Cards/Damage/BigJohnAI.png" }
         ];
 
         this.players = [
-          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3 },
-          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3 }
+          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3, usedSomeGirlExplosion: false },
+          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3, usedSomeGirlExplosion: false }
         ];
 
         // Draw initial hands now that player objects exist
@@ -1621,6 +1638,11 @@
             // This stops infinite stacking loops entirely at the draw phase.
             if (player.extraTurns > 0) {
                weightedDeck = weightedDeck.filter(c => !c.src.includes("SeethingRage"));
+            }
+
+            // Balance 5: Make "Some Girl" somewhat rare. 50% of the time, remove it from the draw pool.
+            if (Math.random() > 0.50) {
+               weightedDeck = weightedDeck.filter(c => !c.src.includes("SomeGirl"));
             }
           }
         }
@@ -2351,6 +2373,41 @@
         const msg = game.applyActionEffect(playerKey, action);
         showBattleLog(msg);
         
+        // Track Some Girl Explosion usage globally for the player
+        if (card.name === 'SomeGirl' && action.name === 'Explode!') {
+           const p = game.players.find(pl => pl.key === playerKey);
+           if (p) p.usedSomeGirlExplosion = true;
+        }
+
+        // Handle special video playback for OneyPlays "Slap" action
+        if (card.name === 'OneyPlays' && action.name === 'Slap') {
+           const bgVideo = document.getElementById('oney-bg-video');
+           if (bgVideo) {
+               // Pause canvas rendering to save CPU
+               const canvas = document.getElementById('bg-particles');
+               if (canvas) canvas.style.display = 'none';
+               
+               // Handle audio ducking: pause music and sync video volume to game settings
+               const wasMusicPlaying = !audioSystem.musicPlayer.paused;
+               if (wasMusicPlaying) {
+                   audioSystem.musicPlayer.pause();
+               }
+               
+               bgVideo.volume = audioSystem.silentMode ? 0 : audioSystem.musicVolume;
+               bgVideo.style.display = 'block';
+               bgVideo.play().catch(e => console.error("Video play failed:", e));
+               
+               // When video ends, hide it, restore canvas, and resume music
+               bgVideo.onended = () => {
+                   bgVideo.style.display = 'none';
+                   if (canvas && !isPerformanceMode) canvas.style.display = 'block';
+                   if (wasMusicPlaying && !audioSystem.silentMode) {
+                       audioSystem.musicPlayer.play().catch(e => console.error("Music resume failed:", e));
+                   }
+               };
+           }
+        }
+
         // Most cards are single-use.
         card.isExpended = true;
         
@@ -2423,12 +2480,17 @@
         const btn = document.createElement('button');
         btn.className = 'action-btn';
         
-        // Special logic for "Some Girl" logic: Cannot be used if opponent has less than 2 cards
+        // Special logic for "Some Girl" logic: Cannot be used if opponent has less than 2 cards, OR if already used once this game.
         let isDisabled = false;
         let extraText = '';
-        if (card.name === 'SomeGirl' && action.name === 'Explosion') {
+        if (card.name === 'SomeGirl' && action.name === 'Explode!') {
+           const player = game.players.find(p => p.key === playerKey);
            const opponent = game.players.find(p => p.key !== playerKey);
-           if (opponent && opponent.hand.length < 2) {
+           
+           if (player && player.usedSomeGirlExplosion) {
+             isDisabled = true;
+             extraText = '<br><span style="color:red; font-size:0.9rem;">(Explode can only be used ONCE per game)</span>';
+           } else if (opponent && opponent.hand.length < 2) {
              isDisabled = true;
              extraText = '<br><span style="color:red; font-size:0.9rem;">(Opponent needs at least 2 cards)</span>';
            }
@@ -3114,7 +3176,9 @@
           "Assets/Cards/Magic/JawiusJr.png",
           "Assets/Cards/Magic/SomeGirl.png",
           "Assets/Cards/Magic/Theodore.png",
-          "Assets/Cards/Damage/BigS.png"
+          "Assets/Cards/Damage/BigS.png",
+          "Assets/Cards/Damage/OneyPlays.png",
+          "Assets/Cards/Damage/BigJohnAI.png"
       ];
       allCards.forEach(src => {
         const img = new Image();

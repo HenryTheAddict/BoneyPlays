@@ -836,5 +836,124 @@ const cardsData = {
         ]
       }
     ]
+  },
+  "OneyPlays": {
+    "type": "Damage",
+    "actions": [
+      {
+        "name": "OneyDance",
+        "poison": 120,
+        "poisonRounds": 5,
+        "description": "You dance like a king. doing 120 poison for 5 rounds. Canonically, 5 rounds is 10 hours.",
+        "questions": [
+          {
+            "question": "What is the funny bone actually?",
+            "options": ["The Ulnar Nerve", "A bone in your elbow", "A bone in your knee", "A myth"],
+            "answer": 0
+          },
+          {
+            "question": "Where does most digestion occur?",
+            "options": ["Small Intestine", "Stomach", "Large Intestine", "Esophagus"],
+            "answer": 0
+          },
+          {
+            "question": "What acid is found in the stomach to break down food?",
+            "options": ["Hydrochloric Acid", "Sulfuric Acid", "Citric Acid", "Nitric Acid"],
+            "answer": 0
+          },
+          {
+            "question": "What is the process of muscles pushing food down called?",
+            "options": ["Peristalsis", "Digestion", "Swallowing", "Gravity"],
+            "answer": 0
+          }
+        ]
+      },
+      {
+        "name": "Slap",
+        "damage": 175,
+        "description": "You slap the opponents stomach, like in the dance. Shows the full Oney dance in the background.",
+        "questions": [
+          {
+            "question": "Why does hitting the funny bone tingle?",
+            "options": ["The nerve is close to the skin", "The bone vibrates", "Electricity", "It actually doesn't"],
+            "answer": 0
+          },
+          {
+            "question": "What organ produces bile?",
+            "options": ["Liver", "Gallbladder", "Pancreas", "Stomach"],
+            "answer": 0
+          },
+          {
+            "question": "Where is water primarily absorbed in digestion?",
+            "options": ["Large Intestine", "Small Intestine", "Stomach", "Kidneys"],
+            "answer": 0
+          },
+          {
+            "question": "What protects the stomach lining from its own acid?",
+            "options": ["Mucus", "Blood", "Fat", "Water"],
+            "answer": 0
+          }
+        ]
+      }
+    ]
+  },
+  "BigJohnAI": {
+    "type": "Damage",
+    "actions": [
+      {
+        "name": "AI Fard",
+        "damage": 100,
+        "description": "100 dookie damage to the opponent. wow. just wow",
+        "questions": [
+          {
+            "question": "What is a major environmental concern with training large AI models?",
+            "options": ["High electricity consumption", "Too much noise", "Plastic waste", "Deforestation directly"],
+            "answer": 0
+          },
+          {
+            "question": "Data centers used for AI require massive amounts of what to stay cool?",
+            "options": ["Water", "Liquid Nitrogen", "Ice", "Fans only"],
+            "answer": 0
+          },
+          {
+            "question": "What is e-waste in the context of AI?",
+            "options": ["Discarded server hardware", "Deleted files", "Spam emails", "Old floppy disks"],
+            "answer": 0
+          },
+          {
+            "question": "How can AI help the environment?",
+            "options": ["Optimizing energy grids", "Printing more paper", "Burning fossil fuels", "It can't"],
+            "answer": 0
+          }
+        ]
+      },
+      {
+        "name": "Gemini",
+        "damage": 210,
+        "description": "Smell his toes using the newest google models.",
+        "questions": [
+          {
+            "question": "Which of these contributes most to a data center's carbon footprint?",
+            "options": ["Cooling systems and servers", "Office lights", "Employee commutes", "Paper usage"],
+            "answer": 0
+          },
+          {
+            "question": "What does 'carbon neutral' mean for a tech company?",
+            "options": ["Offsetting emissions to equal zero", "Using no electricity", "Only using solar power", "Banning cars"],
+            "answer": 0
+          },
+          {
+            "question": "Why do AI servers generate so much heat?",
+            "options": ["Intense GPU processing", "Friction", "Chemical reactions", "Because they are painted black"],
+            "answer": 0
+          },
+          {
+            "question": "Which material is heavily mined for AI hardware components?",
+            "options": ["Lithium and Cobalt", "Gold", "Diamond", "Coal"],
+            "answer": 0
+          }
+        ]
+      }
+    ]
   }
 };
