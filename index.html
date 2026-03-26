@@ -1307,11 +1307,12 @@
         }
         
         // Pre-load all music tracks
-        this.musicTracks.forEach(track => {
+        const tracks = this.musicTracks;
+        for (let i = 0, len = tracks.length; i < len; i++) {
           const a = new Audio();
-          a.src = track;
+          a.src = tracks[i];
           a.load();
-        });
+        }
         const shaeAudio = new Audio();
         shaeAudio.src = this.shaeTrack;
         shaeAudio.load();
@@ -1357,7 +1358,7 @@
       shuffleMusicQueue() {
         this.musicQueue = [...this.musicTracks];
         for (let i = this.musicQueue.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
+          const j = (Math.random() * (i + 1)) | 0;
           [this.musicQueue[i], this.musicQueue[j]] = [this.musicQueue[j], this.musicQueue[i]];
         }
         this.currentMusicIndex = 0;
@@ -1403,13 +1404,25 @@
           this.startMusic();
         }
       },
+      sfxPool: {},
       playSfx(name) {
         if (this.silentMode) return;
         if (this.sounds[name]) {
-          // Clone the node so multiple of the same sound can play at once
-          const soundClone = this.sounds[name].cloneNode();
-          soundClone.volume = this.sfxVolume;
-          soundClone.play().catch(e => console.log('SFX Play Error:', e));
+          if (!this.sfxPool[name]) this.sfxPool[name] = [];
+          let sound = null;
+          for (let i = 0, len = this.sfxPool[name].length; i < len; i++) {
+            if (this.sfxPool[name][i].paused || this.sfxPool[name][i].ended) {
+              sound = this.sfxPool[name][i];
+              break;
+            }
+          }
+          if (!sound) {
+            sound = this.sounds[name].cloneNode();
+            this.sfxPool[name].push(sound);
+          }
+          sound.volume = this.sfxVolume;
+          sound.currentTime = 0;
+          sound.play().catch(e => console.log('SFX Play Error:', e));
         }
       }
     };
@@ -1420,9 +1433,8 @@
     window.addEventListener('keydown', (e) => {
       keysPressed[e.key.toLowerCase()] = true;
       if (keysPressed['s'] && keysPressed['e'] && keysPressed['t']) {
-        const overlay = document.getElementById('settings-overlay');
-        if (overlay.style.display !== 'flex') {
-          overlay.style.display = 'flex';
+        if (settingsOverlay.style.display !== 'flex') {
+          settingsOverlay.style.display = 'flex';
         }
       }
     });
@@ -1454,7 +1466,7 @@
     });
     
     document.getElementById('close-settings-btn').addEventListener('click', () => {
-      document.getElementById('settings-overlay').style.display = 'none';
+      settingsOverlay.style.display = 'none';
       keysPressed['s'] = false;
       keysPressed['e'] = false;
       keysPressed['t'] = false;
@@ -1468,7 +1480,14 @@
 
     const getRgbFromHex = (hex) => {
       const clean = hex.replace('#', '');
-      const normalized = clean.length === 3 ? clean.split('').map(ch => ch + ch).join('') : clean;
+      let normalized = clean;
+      if (clean.length === 3) {
+        normalized = '';
+        for (let i = 0; i < 3; i++) {
+          const ch = clean[i];
+          normalized += ch + ch;
+        }
+      }
       const value = Number.parseInt(normalized, 16);
       const r = (value >> 16) & 255;
       const g = (value >> 8) & 255;
@@ -1478,7 +1497,14 @@
 
     const getHueFromHex = (hex) => {
       const clean = hex.replace('#', '');
-      const normalized = clean.length === 3 ? clean.split('').map(ch => ch + ch).join('') : clean;
+      let normalized = clean;
+      if (clean.length === 3) {
+        normalized = '';
+        for (let i = 0; i < 3; i++) {
+          const ch = clean[i];
+          normalized += ch + ch;
+        }
+      }
       const value = Number.parseInt(normalized, 16);
       const r = ((value >> 16) & 255) / 255;
       const g = ((value >> 8) & 255) / 255;
@@ -1506,7 +1532,9 @@
     };
 
     const refreshColorSelectionUI = () => {
-      document.querySelectorAll('.color-chip').forEach(chip => {
+      const chips = document.querySelectorAll('.color-chip');
+      for (let i = 0, len = chips.length; i < len; i++) {
+        const chip = chips[i];
         const player = chip.dataset.player;
         const otherPlayer = player === 'p1' ? 'p2' : 'p1';
         const color = chip.dataset.color;
@@ -1516,16 +1544,24 @@
         
         chip.classList.toggle('selected', isSelected);
         chip.classList.toggle('taken', isTaken && !isSelected);
-      });
+      }
     };
 
     const renderColorPickers = () => {
-      ['p1', 'p2'].forEach(playerKey => {
+      const pKeys = ['p1', 'p2'];
+      for (let i = 0; i < 2; i++) {
+        const playerKey = pKeys[i];
         const picker = document.getElementById(`${playerKey}-color-picker`);
-        picker.innerHTML = PLAYER_COLORS.map(color => `<button type="button" class="color-chip" data-player="${playerKey}" data-color="${color}" style="--chip-color:${color};"></button>`).join('');
-      });
+        let html = '';
+        for (let j = 0; j < PLAYER_COLORS.length; j++) {
+          html += `<button type="button" class="color-chip" data-player="${playerKey}" data-color="${PLAYER_COLORS[j]}" style="--chip-color:${PLAYER_COLORS[j]};"></button>`;
+        }
+        picker.innerHTML = html;
+      }
       refreshColorSelectionUI();
-      document.querySelectorAll('.color-chip').forEach(chip => {
+      const chips = document.querySelectorAll('.color-chip');
+      for (let i = 0, len = chips.length; i < len; i++) {
+        const chip = chips[i];
         chip.addEventListener('click', () => {
           const player = chip.dataset.player;
           const otherPlayer = player === 'p1' ? 'p2' : 'p1';
@@ -1549,7 +1585,7 @@
           setupActiveAccent(player);
           resetIdleTimer();
         });
-      });
+      }
     };
 
     setSceneAccents(selectedPlayerColors.p1, selectedPlayerColors.p2, selectedPlayerColors.p1);
@@ -1587,7 +1623,9 @@
         this.currentTurn = "p1";
         
         // Players start with no card selected
-        this.players.forEach(p => p.selected = null);
+        for (let i = 0, len = this.players.length; i < len; i++) {
+          this.players[i].selected = null;
+        }
       }
 
       formatName(src) {
@@ -1595,12 +1633,17 @@
       }
 
       randomCards(count, playerKey) {
+        const rand = Math.random;
         // Build a weighted deck based on game state
         let weightedDeck = [...this.allCards];
         
         if (playerKey) {
-          const player = this.players.find(p => p.key === playerKey);
-          const opponent = this.players.find(p => p.key !== playerKey);
+          let player = null;
+          let opponent = null;
+          for (let i = 0, len = this.players.length; i < len; i++) {
+            if (this.players[i].key === playerKey) player = this.players[i];
+            else opponent = this.players[i];
+          }
           
           if (player && opponent) {
             const playerHpPercent = player.hp / player.maxHp;
@@ -1608,72 +1651,90 @@
 
             // Secret Advantage for Henry, George, Abby, Shae, and Calisto: Draw way more Magic and heavy Damage cards!
             const vipNames = ['henry', 'george', 'abby', 'shae', 'calisto'];
-            const isVip = vipNames.includes(player.label.toLowerCase());
+            const pLabelLower = player.label.toLowerCase();
+            let isVip = false;
+            for (let i = 0; i < vipNames.length; i++) {
+              if (vipNames[i] === pLabelLower) {
+                isVip = true;
+                break;
+              }
+            }
             if (isVip) {
-              const opCards = this.allCards.filter(c => c.src.includes("Magic") || c.src.includes("TheBONE") || c.src.includes("FemFemFemur") || c.src.includes("BigS") || c.src.includes("Theodore"));
-              // Stuff the deck with OP cards
-              weightedDeck.push(...opCards, ...opCards, ...opCards);
+              for (let i = 0; i < this.allCards.length; i++) {
+                const c = this.allCards[i];
+                if (c.src.includes("Magic") || c.src.includes("TheBONE") || c.src.includes("FemFemFemur") || c.src.includes("BigS") || c.src.includes("Theodore")) {
+                  weightedDeck.push(c, c, c);
+                }
+              }
             }
 
             // Balance 1: If player is low on health (< 30%), double the chance of health cards
             if (playerHpPercent < 0.3) {
-              const healthCards = this.allCards.filter(c => c.src.includes("Health"));
-              weightedDeck.push(...healthCards); // Add them again to increase probability
+              for (let i = 0; i < this.allCards.length; i++) {
+                if (this.allCards[i].src.includes("Health")) weightedDeck.push(this.allCards[i]);
+              }
             }
 
             // Balance 2: If opponent is low on health (< 30%), slightly increase chance of damage cards for finishing blows
             if (opponentHpPercent < 0.3) {
-              const damageCards = this.allCards.filter(c => c.src.includes("Damage"));
-              weightedDeck.push(...damageCards);
+              for (let i = 0; i < this.allCards.length; i++) {
+                if (this.allCards[i].src.includes("Damage")) weightedDeck.push(this.allCards[i]);
+              }
             }
 
             // Balance 3: If player has full health, reduce chance of drawing health cards
-            // (We achieve this by adding extra damage/magic cards to dilute the pool)
             if (playerHpPercent > 0.9) {
-              const nonHealthCards = this.allCards.filter(c => !c.src.includes("Health"));
-              weightedDeck.push(...nonHealthCards);
+              for (let i = 0; i < this.allCards.length; i++) {
+                if (!this.allCards[i].src.includes("Health")) weightedDeck.push(this.allCards[i]);
+              }
             }
 
             // Balance 4: Prevent drawing Seething Rage if the player ALREADY has active extra turns
-            // This stops infinite stacking loops entirely at the draw phase.
             if (player.extraTurns > 0) {
-               weightedDeck = weightedDeck.filter(c => !c.src.includes("SeethingRage"));
+              const temp = [];
+              for (let i = 0; i < weightedDeck.length; i++) {
+                if (!weightedDeck[i].src.includes("SeethingRage")) temp.push(weightedDeck[i]);
+              }
+              weightedDeck = temp;
             }
 
-            // Balance 5: Make "Some Girl" somewhat rare. 50% of the time, remove it from the draw pool.
-            if (Math.random() > 0.50) {
-               weightedDeck = weightedDeck.filter(c => !c.src.includes("SomeGirl"));
+            // Balance 5: Make "Some Girl" somewhat rare.
+            if (rand() > 0.50) {
+              const temp = [];
+              for (let i = 0; i < weightedDeck.length; i++) {
+                if (!weightedDeck[i].src.includes("SomeGirl")) temp.push(weightedDeck[i]);
+              }
+              weightedDeck = temp;
             }
           }
         }
 
         // Proper Fisher-Yates shuffle on the weighted deck
-        const shuffled = [...weightedDeck];
+        const shuffled = [];
+        for (let i = 0; i < weightedDeck.length; i++) shuffled.push(weightedDeck[i]);
         for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          const j = (rand() * (i + 1)) | 0;
+          const temp = shuffled[i];
+          shuffled[i] = shuffled[j];
+          shuffled[j] = temp;
         }
         
-        // Ensure unique cards in the selection so a player doesn't draw duplicates
-        // of what's already in their hand, or duplicate the same card multiple times in one draw.
-        const player = playerKey ? this.players.find(p => p.key === playerKey) : null;
-        
-        // Use a strict Set to track all active card names (both in hand and currently being drawn)
+        // Ensure unique cards in the selection
+        const player = playerKey ? (playerKey === 'p1' ? this.players[0] : this.players[1]) : null;
         const activeCardNames = new Set();
         if (player) {
-          player.hand.forEach(c => activeCardNames.add(this.formatName(c.src)));
+          for (let i = 0; i < player.hand.length; i++) {
+            activeCardNames.add(this.formatName(player.hand[i].src));
+          }
         }
         
         const selectedCards = [];
         let deckIndex = 0;
-        
         while (selectedCards.length < count && deckIndex < shuffled.length) {
           const card = shuffled[deckIndex];
           const name = this.formatName(card.src);
-          
-          // Check if this exact card is already anywhere in the player's possession
           if (!activeCardNames.has(name)) {
-            activeCardNames.add(name); // Mark it as possessed now
+            activeCardNames.add(name);
             selectedCards.push({
               ...card,
               id: `c-${selectedCards.length}-${Math.random()}`,
@@ -1684,16 +1745,14 @@
           deckIndex++;
         }
         
-        // Fallback: If we exhausted the deck and couldn't find unique cards (rare, but possible with a small pool),
-        // we HAVE to break the uniqueness rule just to prevent the game from freezing, but we still try to
-        // avoid duplicating within the *current draw* itself.
+        // Fallback
         if (selectedCards.length < count) {
            deckIndex = 0;
-           const currentDrawNames = new Set(selectedCards.map(c => c.name));
+           const currentDrawNames = new Set();
+           for (let i = 0; i < selectedCards.length; i++) currentDrawNames.add(selectedCards[i].name);
            while (selectedCards.length < count && deckIndex < shuffled.length) {
              const card = shuffled[deckIndex];
              const name = this.formatName(card.src);
-             
              if (!currentDrawNames.has(name)) {
                currentDrawNames.add(name);
                selectedCards.push({
@@ -1706,13 +1765,16 @@
              deckIndex++;
            }
         }
-
         return selectedCards;
       }
 
       applyActionEffect(playerKey, action) {
-        const player = this.players.find(p => p.key === playerKey);
-        const opponent = this.players.find(p => p.key !== playerKey);
+        let player = null;
+        let opponent = null;
+        for (let i = 0, len = this.players.length; i < len; i++) {
+          if (this.players[i].key === playerKey) player = this.players[i];
+          else opponent = this.players[i];
+        }
         
         let message = `${player.label} used ${action.name}!`;
 
@@ -1729,7 +1791,7 @@
           message += ` Took ${action.selfDamage} self-damage!`;
         }
         if (action.lifesteal) {
-          const amount = Math.floor(opponent.hp * action.lifesteal);
+          const amount = (opponent.hp * action.lifesteal) | 0;
           opponent.hp -= amount;
           player.hp = Math.min(player.maxHp, player.hp + amount);
           message += ` Stole ${amount} HP!`;
@@ -1754,7 +1816,7 @@
           if (success) {
              message += ` The joke landed!`;
           } else {
-             const loss = Math.floor(player.maxHp * action.gambleHealth);
+             const loss = (player.maxHp * action.gambleHealth) | 0;
              player.hp -= loss;
              message += ` The joke failed... Lost ${loss} HP.`;
           }
@@ -1784,8 +1846,22 @@
     }
 
       endTurn(playerKey, cardId, isExpended = false) {
-        const player = this.players.find(p => p.key === playerKey);
-        const cardIndex = player.hand.findIndex(c => c.id === cardId);
+        let player = null;
+        for (let i = 0, len = this.players.length; i < len; i++) {
+          if (this.players[i].key === playerKey) {
+            player = this.players[i];
+            break;
+          }
+        }
+
+        let cardIndex = -1;
+        const hand = player.hand;
+        for (let i = 0, len = hand.length; i < len; i++) {
+          if (hand[i].id === cardId) {
+            cardIndex = i;
+            break;
+          }
+        }
         
         // Deselect and remove card if it is expended
         player.selected = null;
@@ -1812,7 +1888,13 @@
         }
         
         // Apply poison to the player who is about to take their turn
-        const nextPlayer = this.players.find(p => p.key === nextPlayerKey);
+        let nextPlayer = null;
+        for (let i = 0, len = this.players.length; i < len; i++) {
+          if (this.players[i].key === nextPlayerKey) {
+            nextPlayer = this.players[i];
+            break;
+          }
+        }
         if (nextPlayer) {
           nextPlayer.selected = null;
           
@@ -1835,12 +1917,26 @@
     const board = document.getElementById("board");
     const turnBanner = document.getElementById("turn-banner");
     const startScreen = document.getElementById("start-screen");
+    const actionOverlay = document.getElementById('action-overlay');
+    const triviaOverlay = document.getElementById('trivia-overlay');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const nameSetup = document.getElementById('name-setup');
+    const p1NameInput = document.getElementById('p1-name');
+    const p2NameInput = document.getElementById('p2-name');
+    const battleLog = document.getElementById('battle-log');
+    const bgParticlesCanvas = document.getElementById('bg-particles');
 
     let isNewTurn = false; // Tracks if we need to play the start-of-turn animation
     let isTransitioning = false; // Prevents interactions during turn transition
 
     const showTurnBanner = () => {
-      const p = game.players.find(pl => pl.key === game.currentTurn);
+      let p = null;
+      for (let i = 0, len = game.players.length; i < len; i++) {
+        if (game.players[i].key === game.currentTurn) {
+          p = game.players[i];
+          break;
+        }
+      }
       const isP1 = p.key === 'p1';
 
       // 1. Trigger the radial wave expansion
@@ -1923,34 +2019,31 @@
     const makePlayerHtml = (player) => {
       const isSmooshed = player.selected !== null;
       const handClass = isSmooshed ? "hand is-smooshed" : "hand";
+      const isCurrentTurn = player.key === game.currentTurn;
 
-      const cardsHtml = player.hand.map((card, index) => {
+      let cardsHtml = "";
+      for (let i = 0, len = player.hand.length; i < len; i++) {
+        const card = player.hand[i];
         const isSelected = card.id === player.selected;
         const selectedClass = isSelected ? " is-selected" : "";
         
-        // Apply shuffle animation when it's a new turn for the active player
         let animClass = "";
         let animStyle = "";
-        if (isNewTurn && player.key === game.currentTurn) {
+        if (isNewTurn && isCurrentTurn) {
           animClass = " shuffle-in";
-          animStyle = `style="animation-delay: ${index * 0.1}s"`;
+          animStyle = `style="animation-delay: ${i * 0.1}s"`;
         }
-
         const containerClass = isSelected ? " card-container is-selected" : " card-container";
-        
-        // Check for fadeLevel to show visual indication of remaining uses
-        const fadeStyle = card.fadeLevel ? `opacity: 0.5; filter: grayscale(50%) blur(1px);` : '';
+        const fadeStyle = card.fadeLevel ? 'opacity: 0.5; filter: grayscale(50%) blur(1px);' : '';
 
-        return `
-          <div class="${containerClass}" id="container-${card.id}">
+        cardsHtml += `<div class="${containerClass}" id="container-${card.id}">
             <button class="card${selectedClass}${animClass}" ${animStyle} data-player="${player.key}" data-id="${card.id}" id="card-${card.id}">
               <img src="${card.src}" alt="${card.name}" style="${fadeStyle}" />
             </button>
-          </div>
-        `;
-      }).join("");
+          </div>`;
+      }
 
-      const activeClass = player.key === game.currentTurn ? " active" : "";
+      const activeClass = isCurrentTurn ? " active" : "";
 
       return `
         <section class="player${activeClass}" id="section-${player.key}" data-player="${player.key}">
@@ -1964,11 +2057,12 @@
     };
 
     const calculateCardPositions = () => {
-      game.players.forEach(player => {
+      for (let pIdx = 0, pLen = game.players.length; pIdx < pLen; pIdx++) {
+        const player = game.players[pIdx];
         const section = document.getElementById(`section-${player.key}`);
-        if (!section) return;
+        if (!section) continue;
         
-        if (player.key !== game.currentTurn) return;
+        if (player.key !== game.currentTurn) continue;
 
         const sectionRect = section.getBoundingClientRect();
         const targetX = sectionRect.width / 2;
@@ -1976,7 +2070,9 @@
 
         const totalCards = player.hand.length;
 
-        player.hand.forEach((card, index) => {
+        for (let cIdx = 0; cIdx < totalCards; cIdx++) {
+          const card = player.hand[cIdx];
+          const index = cIdx;
           const cardEl = document.getElementById(`card-${card.id}`);
           const containerEl = document.getElementById(`container-${card.id}`);
           if (!cardEl || !containerEl) return;
@@ -2000,7 +2096,7 @@
             // To make it targetHeight pixels tall, the scale needs to be targetHeight / 1143.
             const dynamicScale = Math.min(1.0, Math.max(0.3, targetHeight / 1143)); 
 
-            cardEl.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${dynamicScale})`;
+            cardEl.style.transform = `translate(${deltaX | 0}px, ${deltaY | 0}px) scale(${dynamicScale})`;
             cardEl.style.zIndex = "100"; // Selected card overlaps everything
           } else {
             // Unselected scale is 0.175 (140px width / 800px base width)
@@ -2011,15 +2107,22 @@
             const rotation = relativePos * 5; // 5 degrees per card away from center
             const translateY = Math.abs(relativePos) * 10; // Slight arch effect
 
-            cardEl.style.transform = `translate(0, ${translateY}px) scale(0.175) rotate(${rotation}deg)`;
+            cardEl.style.transform = `translate(0, ${translateY | 0}px) scale(0.175) rotate(${rotation | 0}deg)`;
             cardEl.style.zIndex = "1"; // Reset z-index
           }
-        });
-      });
+        }
+      }
     };
 
     const render = () => {
-      const activePlayer = game.players.find(pl => pl.key === game.currentTurn) || game.players[0];
+      let activePlayer = null;
+      for (let i = 0, len = game.players.length; i < len; i++) {
+        if (game.players[i].key === game.currentTurn) {
+          activePlayer = game.players[i];
+          break;
+        }
+      }
+      if (!activePlayer) activePlayer = game.players[0];
       setSceneAccents(game.players[0].accent, game.players[1].accent, activePlayer.accent);
       document.body.setAttribute('data-active', activePlayer.key);
 
@@ -2042,10 +2145,14 @@
 
       const isTabletMode = window.innerWidth <= 1024;
 
+      let playersHtml = "";
+      for (let i = 0; i < game.players.length; i++) {
+        playersHtml += makePlayerHtml(game.players[i]);
+      }
       board.innerHTML = `
         ${makeHealthBarsHtml(oldP1Percent, oldP2Percent)}
         <div class="players-container" style="${isTabletMode ? 'display: flex; flex-direction: column; height: calc(100vh - 80px); overflow-y: auto;' : 'display: contents;'}">
-          ${game.players.map(makePlayerHtml).join("")}
+          ${playersHtml}
         </div>
       `;
       bind();
@@ -2077,11 +2184,12 @@
         
         // Let the CSS animation play out
         setTimeout(() => {
-          shuffledCards.forEach(el => {
+          for (let i = 0, len = shuffledCards.length; i < len; i++) {
+            const el = shuffledCards[i];
             if (el && el.classList) {
               el.classList.remove('shuffle-in');
             }
-          });
+          }
           
           requestAnimationFrame(calculateCardPositions);
         }, 1200);
@@ -2093,14 +2201,22 @@
     };
 
     const bind = () => {
-      board.querySelectorAll(".card").forEach((cardButton) => {
+      const cardButtons = board.querySelectorAll(".card");
+      for (let i = 0, len = cardButtons.length; i < len; i++) {
+        const cardButton = cardButtons[i];
         cardButton.addEventListener("click", () => {
           if (isTransitioning) return; // Prevent clicks while animations are playing
           
           audioSystem.playSfx('popin');
 
           const playerKey = cardButton.dataset.player;
-          const player = game.players.find((item) => item.key === playerKey);
+          let player = null;
+          for (let j = 0, plen = game.players.length; j < plen; j++) {
+            if (game.players[j].key === playerKey) {
+              player = game.players[j];
+              break;
+            }
+          }
           if (!player) return;
 
           const cardId = cardButton.dataset.id;
@@ -2109,7 +2225,13 @@
             isTransitioning = true; // Block further interactions
             audioSystem.playSfx('uiCardActions'); // Play new action sound
             
-            const card = player.hand.find(c => c.id === cardId);
+            let card = null;
+            for (let j = 0, hlen = player.hand.length; j < hlen; j++) {
+              if (player.hand[j].id === cardId) {
+                card = player.hand[j];
+                break;
+              }
+            }
             if (card && card.data && card.data.actions) {
               showActionOverlay(playerKey, card);
             } else {
@@ -2122,13 +2244,13 @@
             render();
           }
         });
-      });
+      }
     };
 
     // --- Battle Overlays ---
     
     const showBattleLog = (message) => {
-      const log = document.getElementById('battle-log');
+      const log = battleLog;
       log.textContent = message;
       log.style.opacity = 1;
       setTimeout(() => log.style.opacity = 0, 3000);
@@ -2177,8 +2299,8 @@
           deathText = customDeathText;
         } else {
           // Pick random phrases
-          const rawWin = phrasesData.winPhrases[Math.floor(Math.random() * phrasesData.winPhrases.length)];
-          const rawDeath = phrasesData.deathPhrases[Math.floor(Math.random() * phrasesData.deathPhrases.length)];
+          const rawWin = phrasesData.winPhrases[(Math.random() * phrasesData.winPhrases.length) | 0];
+          const rawDeath = phrasesData.deathPhrases[(Math.random() * phrasesData.deathPhrases.length) | 0];
           
           winText = rawWin.replace(/{winner}/g, winner.label).replace(/{loser}/g, loser.label);
           deathText = rawDeath.replace(/{winner}/g, winner.label).replace(/{loser}/g, loser.label);
@@ -2207,8 +2329,22 @@
 
           function speakPhrases(availableVoices, u1, u2) {
             // Try to find distinct voices (e.g. female vs male, or just different ones)
-            let voice1 = availableVoices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google US English'));
-            let voice2 = availableVoices.find(v => (v.name.includes('Male') || v.name.includes('David') || v.name.includes('UK English Male')) && v !== voice1);
+            let voice1 = null;
+            for (let i = 0, len = availableVoices.length; i < len; i++) {
+              const v = availableVoices[i];
+              if (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google US English')) {
+                voice1 = v;
+                break;
+              }
+            }
+            let voice2 = null;
+            for (let i = 0, len = availableVoices.length; i < len; i++) {
+              const v = availableVoices[i];
+              if ((v.name.includes('Male') || v.name.includes('David') || v.name.includes('UK English Male')) && v !== voice1) {
+                voice2 = v;
+                break;
+              }
+            }
             
             // Fallbacks if specific voices aren't found
             if (!voice1 && availableVoices.length > 0) voice1 = availableVoices[0];
@@ -2232,13 +2368,15 @@
         const slidesContainer = document.getElementById('winner-slides');
         // Clear previous except the title
         slidesContainer.innerHTML = '<div class="winner-slides-title">Winning Hand</div>';
-        winner.hand.forEach((card, i) => {
+        const winnerHand = winner.hand;
+        for (let i = 0, len = winnerHand.length; i < len; i++) {
+          const card = winnerHand[i];
           const cardEl = document.createElement('div');
           cardEl.className = 'winner-card-slide';
           cardEl.style.animationDelay = `${i * 0.1}s`;
           cardEl.innerHTML = `<img src="${card.src}" alt="${card.name}" />`;
           slidesContainer.appendChild(cardEl);
-        });
+        }
 
         startConfetti(() => {
           // Callback fired when all confetti is off screen
@@ -2276,7 +2414,7 @@
           y: Math.random() * canvas.height - canvas.height,
           w: Math.random() * 10 + 5,
           h: Math.random() * 20 + 10,
-          c: colors[Math.floor(Math.random() * colors.length)],
+          c: colors[(Math.random() * colors.length) | 0],
           dx: Math.random() * 4 - 2,
           dy: Math.random() * 3 + (isSuperWin ? 4 : 2), // Fall faster if super win
           rot: Math.random() * 360,
@@ -2325,7 +2463,8 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         let active = false;
         
-        confetti.forEach(c => {
+        for (let i = 0, len = confetti.length; i < len; i++) {
+          const c = confetti[i];
           c.x += c.dx;
           c.y += c.dy;
           c.rot += c.dRot;
@@ -2350,7 +2489,7 @@
           }
           
           ctx.restore();
-        });
+        }
 
         if (active) {
           requestAnimationFrame(animate);
@@ -2364,8 +2503,8 @@
     };
 
     const finishTurn = (playerKey, card, action, success) => {
-      document.getElementById('action-overlay').style.display = 'none';
-      document.getElementById('trivia-overlay').style.display = 'none';
+      actionOverlay.style.display = 'none';
+      triviaOverlay.style.display = 'none';
 
       const status = board.querySelector(`[data-status="${playerKey}"]`);
       
@@ -2375,7 +2514,13 @@
         
         // Track Some Girl Explosion usage globally for the player
         if (card.name === 'SomeGirl' && action.name === 'Explode!') {
-           const p = game.players.find(pl => pl.key === playerKey);
+           let p = null;
+           for (let i = 0, len = game.players.length; i < len; i++) {
+             if (game.players[i].key === playerKey) {
+               p = game.players[i];
+               break;
+             }
+           }
            if (p) p.usedSomeGirlExplosion = true;
         }
 
@@ -2384,7 +2529,7 @@
            const bgVideo = document.getElementById('oney-bg-video');
            if (bgVideo) {
                // Pause canvas rendering to save CPU
-               const canvas = document.getElementById('bg-particles');
+               const canvas = bgParticlesCanvas;
                if (canvas) canvas.style.display = 'none';
                
                // Handle audio ducking: pause music and sync video volume to game settings
@@ -2414,7 +2559,14 @@
         if (status) status.textContent = `${card.name} used!`;
       } else {
         audioSystem.playSfx('fail');
-        showBattleLog(`${game.players.find(p=>p.key===playerKey).label} failed the trivia! Turn lost.`);
+        let pLabel = "";
+        for (let i = 0, len = game.players.length; i < len; i++) {
+          if (game.players[i].key === playerKey) {
+            pLabel = game.players[i].label;
+            break;
+          }
+        }
+        showBattleLog(`${pLabel} failed the trivia! Turn lost.`);
         if (status) status.textContent = `Attack failed!`;
       }
 
@@ -2434,11 +2586,13 @@
       const activeSection = document.getElementById(`section-${playerKey}`);
       if (activeSection) {
         audioSystem.playSfx('slide');
-        activeSection.querySelectorAll('.card').forEach((c, idx) => {
+        const sectionCards = activeSection.querySelectorAll('.card');
+        for (let idx = 0, len = sectionCards.length; idx < len; idx++) {
+          const c = sectionCards[idx];
           c.classList.remove('shuffle-in');
           c.classList.add('slide-away');
           c.style.animationDelay = `${idx * 0.05}s`;
-        });
+        }
       }
 
       // Most cards are single-use.
@@ -2472,11 +2626,13 @@
     };
 
     const showActionOverlay = (playerKey, card) => {
-      const overlay = document.getElementById('action-overlay');
+      const overlay = actionOverlay;
       const list = document.getElementById('action-list');
       list.innerHTML = '';
 
-      card.data.actions.forEach((action, index) => {
+      const actions = card.data.actions;
+      for (let index = 0, len = actions.length; index < len; index++) {
+        const action = actions[index];
         const btn = document.createElement('button');
         btn.className = 'action-btn';
         
@@ -2484,8 +2640,12 @@
         let isDisabled = false;
         let extraText = '';
         if (card.name === 'SomeGirl' && action.name === 'Explode!') {
-           const player = game.players.find(p => p.key === playerKey);
-           const opponent = game.players.find(p => p.key !== playerKey);
+           let player = null;
+           let opponent = null;
+           for (let i = 0, len = game.players.length; i < len; i++) {
+             if (game.players[i].key === playerKey) player = game.players[i];
+             else opponent = game.players[i];
+           }
            
            if (player && player.usedSomeGirlExplosion) {
              isDisabled = true;
@@ -2509,13 +2669,19 @@
         }
         
         list.appendChild(btn);
-      });
+      }
 
       document.getElementById('cancel-action-btn').onclick = () => {
         overlay.style.display = 'none';
         isTransitioning = false;
         // Deselect the card
-        const player = game.players.find(p => p.key === playerKey);
+        let player = null;
+        for (let i = 0, len = game.players.length; i < len; i++) {
+          if (game.players[i].key === playerKey) {
+            player = game.players[i];
+            break;
+          }
+        }
         if (player) player.selected = null;
         render();
       };
@@ -2524,13 +2690,13 @@
     };
 
     const showTriviaOverlay = (playerKey, card, action) => {
-      document.getElementById('action-overlay').style.display = 'none';
-      const overlay = document.getElementById('trivia-overlay');
+      actionOverlay.style.display = 'none';
+      const overlay = triviaOverlay;
       
       audioSystem.playSfx('trivstart');
       
       // Pick a random question from the action's questions array
-      const questionObj = action.questions[Math.floor(Math.random() * action.questions.length)];
+      const questionObj = action.questions[(Math.random() * action.questions.length) | 0];
       
       document.getElementById('trivia-question').textContent = questionObj.question;
       const optionsContainer = document.getElementById('trivia-options');
@@ -2549,7 +2715,7 @@
           clearInterval(timerInterval);
           return;
         }
-        timeLeft -= 0.1;
+        timeLeft -= 0.10;
         const percent = (timeLeft / TRIVIA_TIME) * 100;
         timerBar.style.width = `${percent}%`;
         
@@ -2564,21 +2730,32 @@
           clearInterval(timerInterval);
           answered = true;
           // Auto fail when time is up
-          Array.from(optionsContainer.children).forEach(b => {
+          const children = optionsContainer.children;
+          for (let i = 0, len = children.length; i < len; i++) {
+            const b = children[i];
             b.disabled = true;
             if (b.dataset.correct === "true") b.classList.add('correct');
             else b.classList.add('wrong');
-          });
+          }
           showBattleLog("Time's up! Turn lost.");
           setTimeout(() => finishTurn(playerKey, card, action, false), 2000);
         }
       }, 100);
 
       // Randomize options
-      const options = questionObj.options.map((opt, i) => ({ text: opt, isCorrect: i === questionObj.answer }));
-      options.sort(() => Math.random() - 0.5);
+      const options = [];
+      for (let i = 0, len = questionObj.options.length; i < len; i++) {
+        options.push({ text: questionObj.options[i], isCorrect: i === questionObj.answer });
+      }
+      for (let i = options.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        const temp = options[i];
+        options[i] = options[j];
+        options[j] = temp;
+      }
 
-      options.forEach(opt => {
+      for (let i = 0, len = options.length; i < len; i++) {
+        const opt = options[i];
         const btn = document.createElement('button');
         btn.className = 'trivia-btn';
         btn.textContent = opt.text;
@@ -2590,32 +2767,37 @@
           clearInterval(timerInterval);
           
           // Disable all buttons after click
-          Array.from(optionsContainer.children).forEach(b => b.disabled = true);
+          const children = optionsContainer.children;
+          for (let i = 0, len = children.length; i < len; i++) {
+            children[i].disabled = true;
+          }
           
           if (opt.isCorrect) {
             audioSystem.playSfx('trivcorrect');
             btn.classList.add('correct');
             // Dim the others
-            Array.from(optionsContainer.children).forEach(b => {
+            for (let i = 0, len = children.length; i < len; i++) {
+              const b = children[i];
               if (b !== btn) b.classList.add('wrong');
-            });
+            }
             setTimeout(() => finishTurn(playerKey, card, action, true), 1500);
           } else {
             audioSystem.playSfx('trivwrong');
             btn.classList.add('wrong');
             // Highlight correct one
-            Array.from(optionsContainer.children).forEach(b => {
+            for (let i = 0, len = children.length; i < len; i++) {
+              const b = children[i];
               if (b.dataset.correct === "true") {
                 b.classList.add('correct');
               } else {
                 b.classList.add('wrong');
               }
-            });
+            }
             setTimeout(() => finishTurn(playerKey, card, action, false), 2500);
           }
         };
         optionsContainer.appendChild(btn);
-      });
+      }
 
       overlay.style.display = 'flex';
     };
@@ -2701,8 +2883,8 @@
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         startScreen.style.display = 'block';
-        document.getElementById('name-setup').style.display = 'none';
-        document.getElementById('board').style.display = 'none'; // Hide board on idle
+        nameSetup.style.display = 'none';
+        board.style.display = 'none'; // Hide board on idle
         document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme', 'theo-theme'); // Strip all custom themes
         document.body.removeAttribute('data-active'); // Remove player accent tint
         document.body.removeAttribute('data-screen'); // Remove setup screen background animation
@@ -2715,11 +2897,11 @@
     startScreen.addEventListener('click', () => {
       startScreen.style.display = 'none';
       stopSlideshow();
-      document.getElementById('name-setup').style.display = 'flex';
+      nameSetup.style.display = 'flex';
       document.body.setAttribute('data-screen', 'setup');
       setSceneAccents(selectedPlayerColors.p1, selectedPlayerColors.p2, selectedPlayerColors.p1);
       // Automatically focus first input
-      document.getElementById('p1-name').focus();
+      p1NameInput.focus();
       resetIdleTimer();
     });
 
@@ -2732,14 +2914,23 @@
     const checkVipName = (inputEl) => {
       const val = inputEl.value.trim().toLowerCase();
       const vipNames = ['shae', 'mrgerk', 'henry', 'george', 'kenly', 'marwan', 'calisto', 'theo', 'theodore', 'tj'];
-      if (vipNames.includes(val)) {
+      let isVip = false;
+      for (let i = 0, len = vipNames.length; i < len; i++) {
+        if (vipNames[i] === val) {
+          isVip = true;
+          break;
+        }
+      }
+      if (isVip) {
         inputEl.classList.add('vip-input-effect');
       } else {
         inputEl.classList.remove('vip-input-effect');
       }
     };
 
-    document.querySelectorAll('.input-group input').forEach(input => {
+    const allInputs = document.querySelectorAll('.input-group input');
+    for (let i = 0, len = allInputs.length; i < len; i++) {
+      const input = allInputs[i];
       input.addEventListener('focus', (e) => {
         focusedInput = e.target;
         setupActiveAccent(input.id === 'p2-name' ? 'p2' : 'p1');
@@ -2749,9 +2940,11 @@
       input.addEventListener('input', (e) => {
         checkVipName(e.target);
       });
-    });
+    }
 
-    document.querySelectorAll('.kb-key[data-key]').forEach(keyBtn => {
+    const allKeyBtns = document.querySelectorAll('.kb-key[data-key]');
+    for (let i = 0, len = allKeyBtns.length; i < len; i++) {
+      const keyBtn = allKeyBtns[i];
       keyBtn.addEventListener('click', (e) => {
         if (!focusedInput) return;
         
@@ -2776,7 +2969,7 @@
       keyBtn.addEventListener('mousedown', (e) => {
         e.preventDefault();
       });
-    });
+    }
 
     document.getElementById('silent-mode-toggle').addEventListener('change', (e) => {
       audioSystem.setSilentMode(e.target.checked);
@@ -2784,8 +2977,8 @@
     });
 
     document.getElementById('start-game-btn').addEventListener('click', () => {
-      const p1Name = document.getElementById('p1-name').value.trim() || "Player 1";
-      const p2Name = document.getElementById('p2-name').value.trim() || "Player 2";
+      const p1Name = p1NameInput.value.trim() || "Player 1";
+      const p2Name = p2NameInput.value.trim() || "Player 2";
       
       const gameLengthSelect = document.getElementById('game-length');
       const startHp = gameLengthSelect ? parseInt(gameLengthSelect.value, 10) : 500;
@@ -2821,9 +3014,9 @@
         game.players[1].hand = game.randomCards(5, "p2");
       }
       
-      document.getElementById('name-setup').style.display = 'none';
+      nameSetup.style.display = 'none';
       document.body.removeAttribute('data-screen'); // Remove setup screen background animation
-      document.getElementById('board').style.display = 'block'; // Show board
+      board.style.display = 'block'; // Show board
       isNewTurn = true; // Trigger animation for the start of the game
       
       // If Henry, George, Abby, or Shae are playing, their secret advantage is handled inside the randomCards method
@@ -2925,46 +3118,54 @@
       const flaredEmojis = ['🥩', '🔥', '🍖', '🥓', '🍴'];
       const stinkyEmojis = ['💩', '🧦', '🧀', '🤢', '🦠'];
 
-      const particles = [];
-      for (let i = 0; i < 1000; i++) { // Massively increased count
+      const PI = Math.PI;
+      const PI2 = PI * 2;
+      const PARTICLE_COUNT = 1000;
+      const P_DATA_SIZE = 13;
+      const pData = new Float32Array(PARTICLE_COUNT * P_DATA_SIZE);
+      const isHeartArr = new Uint8Array(PARTICLE_COUNT);
+      const pEmojis = {
+        jurassic: [], tech: [], art: [], basketball: [], tiktok: [], theo: [], flared: [], stinky: []
+      };
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
         const size = Math.random() * 4 + 0.5;
-        particles.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          r: size,
-          // Parallax effect: smaller particles move slower, but overall much faster now
-          dx: (Math.random() - 0.5) * (size * 0.15),
-          dy: (Math.random() - 0.5) * (size * 0.15) - (size * 0.05), // Faster upward thermal drift
-          vx: 0,
-          vy: 0,
-          hue: Math.random() * 360,
-          baseOpacity: Math.random() * 0.15 + 0.05,
-          pulseSpeed: Math.random() * 0.001 + 0.0005,
-          pulseOffset: Math.random() * Math.PI * 2,
-          wobbleSpeed: Math.random() * 0.004,
-          wobbleOffset: Math.random() * Math.PI * 2,
-          isHeart: Math.random() < 0.1, // 10% chance to be a heart or theme emoji
-          emojiJurassic: jurassicEmojis[Math.floor(Math.random() * jurassicEmojis.length)],
-          emojiTech: techEmojis[Math.floor(Math.random() * techEmojis.length)],
-          emojiArt: artEmojis[Math.floor(Math.random() * artEmojis.length)],
-          emojiBasketball: basketballEmojis[Math.floor(Math.random() * basketballEmojis.length)],
-          emojiTiktok: tiktokEmojis[Math.floor(Math.random() * tiktokEmojis.length)],
-          emojiTheo: theoEmojis[Math.floor(Math.random() * theoEmojis.length)],
-          emojiFlared: flaredEmojis[Math.floor(Math.random() * flaredEmojis.length)],
-          emojiStinky: stinkyEmojis[Math.floor(Math.random() * stinkyEmojis.length)]
-        });
+        const base = i * P_DATA_SIZE;
+        pData[base + 0] = Math.random() * width; // x
+        pData[base + 1] = Math.random() * height; // y
+        pData[base + 2] = size; // r
+        pData[base + 3] = (Math.random() - 0.5) * (size * 0.15); // dx
+        pData[base + 4] = (Math.random() - 0.5) * (size * 0.15) - (size * 0.05); // dy
+        pData[base + 5] = 0; // vx
+        pData[base + 6] = 0; // vy
+        pData[base + 7] = Math.random() * 360; // hue
+        pData[base + 8] = Math.random() * 0.15 + 0.05; // baseOpacity
+        pData[base + 9] = Math.random() * 0.001 + 0.0005; // pulseSpeed
+        pData[base + 10] = Math.random() * PI2; // pulseOffset
+        pData[base + 11] = Math.random() * 0.004; // wobbleSpeed
+        pData[base + 12] = Math.random() * PI2; // wobbleOffset
+
+        isHeartArr[i] = Math.random() < 0.1 ? 1 : 0;
+        pEmojis.jurassic.push(jurassicEmojis[(Math.random() * jurassicEmojis.length) | 0]);
+        pEmojis.tech.push(techEmojis[(Math.random() * techEmojis.length) | 0]);
+        pEmojis.art.push(artEmojis[(Math.random() * artEmojis.length) | 0]);
+        pEmojis.basketball.push(basketballEmojis[(Math.random() * basketballEmojis.length) | 0]);
+        pEmojis.tiktok.push(tiktokEmojis[(Math.random() * tiktokEmojis.length) | 0]);
+        pEmojis.theo.push(theoEmojis[(Math.random() * theoEmojis.length) | 0]);
+        pEmojis.flared.push(flaredEmojis[(Math.random() * flaredEmojis.length) | 0]);
+        pEmojis.stinky.push(stinkyEmojis[(Math.random() * stinkyEmojis.length) | 0]);
       }
 
       window.burstParticles = (originX, originY) => {
-        particles.forEach(p => {
-          const dx = p.x - originX;
-          const dy = p.y - originY;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const base = i * P_DATA_SIZE;
+          const dx = pData[base + 0] - originX;
+          const dy = pData[base + 1] - originY;
           const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-          // Add explosive force outwards from origin
           const force = (Math.random() * 4000 + 2000) / (dist * 0.1 + 1);
-          p.vx += (dx / dist) * force;
-          p.vy += (dy / dist) * force;
-        });
+          pData[base + 5] += (dx / dist) * force;
+          pData[base + 6] += (dy / dist) * force;
+        }
       };
 
       const drawHeart = (ctx, x, y, size, hue, opacity) => {
@@ -2991,7 +3192,8 @@
       const drawLights = () => {
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
-        lightSources.forEach(light => {
+        for (let i = 0, len = lightSources.length; i < len; i++) {
+          const light = lightSources[i];
           light.age += 16;
           light.x += light.driftX;
           light.y += light.driftY;
@@ -2999,53 +3201,56 @@
           if (lifeT >= 1 || light.x < -300 || light.x > width + 300 || light.y < -300 || light.y > height + 300) {
             spawnLight(light);
           }
-          const fade = Math.sin(Math.min(1, light.age / light.life) * Math.PI);
+          const fade = Math.sin(Math.min(1, light.age / light.life) * PI);
           const alpha = light.alpha * fade;
-          const coreGradient = ctx.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.radius);
+          const coreGradient = ctx.createRadialGradient(light.x | 0, light.y | 0, 0, light.x | 0, light.y | 0, light.radius | 0);
           coreGradient.addColorStop(0, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness + 10}%, ${alpha})`);
           coreGradient.addColorStop(0.45, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness}%, ${alpha * 0.6})`);
           coreGradient.addColorStop(1, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness - 8}%, 0)`);
           ctx.fillStyle = coreGradient;
           ctx.beginPath();
-          ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
+          ctx.arc(light.x | 0, light.y | 0, light.radius | 0, 0, PI2);
           ctx.fill();
-          const bloomGradient = ctx.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.blurRadius);
+          const bloomGradient = ctx.createRadialGradient(light.x | 0, light.y | 0, 0, light.x | 0, light.y | 0, light.blurRadius | 0);
           bloomGradient.addColorStop(0, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness + 18}%, ${alpha * 0.5})`);
           bloomGradient.addColorStop(1, `hsla(${light.hue}, ${light.saturation}%, ${light.lightness}%, 0)`);
           ctx.fillStyle = bloomGradient;
           ctx.beginPath();
-          ctx.arc(light.x, light.y, light.blurRadius, 0, Math.PI * 2);
+          ctx.arc(light.x | 0, light.y | 0, light.blurRadius | 0, 0, PI2);
           ctx.fill();
-        });
+        }
         ctx.restore();
       };
 
       const drawRibbon = (ribbon) => {
         ctx.beginPath();
+        const h2 = height / 2;
+        const wc = ribbon.waveComplexity;
+        const ts = time * ribbon.speed;
+        const ro = ribbon.offset;
+        const amp = ribbon.amplitude;
+        const ts08 = ts * 0.8;
+        const ts12 = ts * 1.2;
+        const wc07 = wc * 0.7;
+        const wc13 = wc * 1.3;
+        const amp06 = amp * 0.6;
+        const amp03 = amp * 0.3;
         
-        // Draw the top edge of the ribbon
-        for (let x = 0; x <= width; x += 15) { // Tighter step for smoother curves
-          // Ultra realistic flow using 3 sine waves for organic chaotic movement
-          const y = height / 2 
-                  + Math.sin(x * ribbon.waveComplexity + time * ribbon.speed + ribbon.offset) * ribbon.amplitude
-                  + Math.sin(x * (ribbon.waveComplexity * 0.7) + time * (ribbon.speed * 0.8)) * (ribbon.amplitude * 0.6)
-                  + Math.cos(x * (ribbon.waveComplexity * 1.3) + time * (ribbon.speed * 1.2)) * (ribbon.amplitude * 0.3);
-                  
-          if (x === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
+        for (let x = 0; x <= width; x += 15) {
+          const y = h2
+                  + Math.sin(x * wc + ts + ro) * amp
+                  + Math.sin(x * wc07 + ts08) * amp06
+                  + Math.cos(x * wc13 + ts12) * amp03;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
         }
 
-        // Draw the bottom edge backwards to create a shape
         for (let x = width; x >= 0; x -= 15) {
-          const y = height / 2 
-                  + Math.sin(x * ribbon.waveComplexity + time * ribbon.speed + ribbon.offset) * ribbon.amplitude
-                  + Math.sin(x * (ribbon.waveComplexity * 0.7) + time * (ribbon.speed * 0.8)) * (ribbon.amplitude * 0.6)
-                  + Math.cos(x * (ribbon.waveComplexity * 1.3) + time * (ribbon.speed * 1.2)) * (ribbon.amplitude * 0.3)
+          const y = h2
+                  + Math.sin(x * wc + ts + ro) * amp
+                  + Math.sin(x * wc07 + ts08) * amp06
+                  + Math.cos(x * wc13 + ts12) * amp03
                   + ribbon.thickness;
-                  
           ctx.lineTo(x, y);
         }
 
@@ -3061,95 +3266,103 @@
         ctx.fill();
       };
 
+      let currentTheme = '';
+      const updateThemeCache = () => {
+        const cl = document.body.classList;
+        if (cl.contains('shae-theme')) currentTheme = 'shae';
+        else if (cl.contains('jurassic-theme')) currentTheme = 'jurassic';
+        else if (cl.contains('tech-theme')) currentTheme = 'tech';
+        else if (cl.contains('art-theme')) currentTheme = 'art';
+        else if (cl.contains('basketball-theme')) currentTheme = 'basketball';
+        else if (cl.contains('tiktok-theme')) currentTheme = 'tiktok';
+        else if (cl.contains('theo-theme')) currentTheme = 'theo';
+        else if (cl.contains('flared-theme')) currentTheme = 'flared';
+        else if (cl.contains('stinky-theme')) currentTheme = 'stinky';
+        else currentTheme = '';
+      };
+
       const drawParticles = () => {
-        const isShaeMode = document.body.classList.contains('shae-theme');
-        const isJurassicMode = document.body.classList.contains('jurassic-theme');
-        const isTechMode = document.body.classList.contains('tech-theme');
-        const isArtMode = document.body.classList.contains('art-theme');
-        const isBasketballMode = document.body.classList.contains('basketball-theme');
-        const isTiktokMode = document.body.classList.contains('tiktok-theme');
-        const isTheoMode = document.body.classList.contains('theo-theme');
-        const isFlaredMode = document.body.classList.contains('flared-theme');
-        const isStinkyMode = document.body.classList.contains('stinky-theme');
-        
-        particles.forEach(p => {
-          // Calculate organic opacity pulsing
-          const currentOpacity = p.baseOpacity + Math.sin(time * p.pulseSpeed + p.pulseOffset) * p.baseOpacity;
-          if (currentOpacity <= 0.01) return; // Skip drawing if basically invisible
+        const theme = currentTheme;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const base = i * P_DATA_SIZE;
+          const px = pData[base + 0];
+          const py = pData[base + 1];
+          const pr = pData[base + 2];
+          const baseOpacity = pData[base + 8];
+          const currentOpacity = baseOpacity + Math.sin(time * pData[base + 9] + pData[base + 10]) * baseOpacity;
+          if (currentOpacity <= 0.01) continue;
 
-          // Add a slight horizontal wobble to simulate air currents
-          const currentX = p.x + Math.sin(time * p.wobbleSpeed + p.wobbleOffset) * (p.r * 2);
+          const currentX = px + Math.sin(time * pData[base + 11] + pData[base + 12]) * (pr * 2);
+          const isHeart = isHeartArr[i];
 
-          if (isShaeMode && p.isHeart) {
-            // Force pink/purple hue for hearts in Shae mode, larger size
-            const heartHue = Math.random() > 0.5 ? 330 : 300; 
-            drawHeart(ctx, currentX, p.y, p.r * 8, heartHue, currentOpacity * 1.5);
-          } else if ((isJurassicMode || isTechMode || isArtMode || isBasketballMode || isTiktokMode || isTheoMode) && p.isHeart) {
+          if (theme === 'shae' && isHeart) {
+            const heartHue = (i % 2 === 0) ? 330 : 300;
+            drawHeart(ctx, currentX | 0, py | 0, (pr * 8) | 0, heartHue, currentOpacity * 1.5);
+          } else if (theme !== '' && theme !== 'shae' && isHeart) {
             ctx.save();
             ctx.globalAlpha = currentOpacity * 1.5;
-            ctx.font = `${p.r * 6}px Arial`;
+            ctx.font = `${(pr * 6) | 0}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             let text = '';
-            if (isJurassicMode) text = p.emojiJurassic;
-            else if (isTechMode) text = p.emojiTech;
-            else if (isArtMode) text = p.emojiArt;
-            else if (isBasketballMode) text = p.emojiBasketball;
-            else if (isTiktokMode) text = p.emojiTiktok;
-            else if (isTheoMode) text = p.emojiTheo;
-            else if (isFlaredMode) text = p.emojiFlared;
-            else if (isStinkyMode) text = p.emojiStinky;
-            ctx.fillText(text, currentX, p.y);
+            if (theme === 'jurassic') text = pEmojis.jurassic[i];
+            else if (theme === 'tech') text = pEmojis.tech[i];
+            else if (theme === 'art') text = pEmojis.art[i];
+            else if (theme === 'basketball') text = pEmojis.basketball[i];
+            else if (theme === 'tiktok') text = pEmojis.tiktok[i];
+            else if (theme === 'theo') text = pEmojis.theo[i];
+            else if (theme === 'flared') text = pEmojis.flared[i];
+            else if (theme === 'stinky') text = pEmojis.stinky[i];
+            ctx.fillText(text, currentX | 0, py | 0);
             ctx.restore();
           } else {
-            // Create a radial gradient for each particle to simulate out-of-focus bokeh
-            const gradient = ctx.createRadialGradient(currentX, p.y, 0, currentX, p.y, p.r);
-            
-            let particleHue = p.hue;
-            if (isShaeMode) particleHue = (p.hue % 60) + 280; 
-            else if (isJurassicMode) particleHue = (p.hue % 40) + 80;
-            else if (isTechMode) particleHue = (p.hue % 40) + 160;
-            else if (isBasketballMode) particleHue = (p.hue % 30) + 20;
-            else if (isTiktokMode) particleHue = Math.random() > 0.5 ? 180 : 330;
-            else if (isTheoMode) particleHue = (p.hue % 30) + 210; // Stormy blues
-            else if (isFlaredMode) particleHue = (p.hue % 30) + 0; // Meat reds
-            else if (isStinkyMode) particleHue = (p.hue % 40) + 80; // Mossy greens
+            const cx = currentX | 0;
+            const cy = py | 0;
+            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, pr);
+            let particleHue = pData[base + 7];
+            if (theme === 'shae') particleHue = (particleHue % 60) + 280;
+            else if (theme === 'jurassic') particleHue = (particleHue % 40) + 80;
+            else if (theme === 'tech') particleHue = (particleHue % 40) + 160;
+            else if (theme === 'basketball') particleHue = (particleHue % 30) + 20;
+            else if (theme === 'tiktok') particleHue = (i % 2 === 0) ? 180 : 330;
+            else if (theme === 'theo') particleHue = (particleHue % 30) + 210;
+            else if (theme === 'flared') particleHue = (particleHue % 30) + 0;
+            else if (theme === 'stinky') particleHue = (particleHue % 40) + 80;
 
             gradient.addColorStop(0, `hsla(${particleHue}, 70%, 80%, ${currentOpacity})`);
             gradient.addColorStop(0.4, `hsla(${particleHue}, 80%, 60%, ${currentOpacity * 0.8})`);
             gradient.addColorStop(1, `hsla(${particleHue}, 90%, 50%, 0)`);
 
             ctx.beginPath();
-            ctx.arc(currentX, p.y, p.r, 0, Math.PI * 2);
+            ctx.arc(cx, cy, pr, 0, PI2);
             ctx.fillStyle = gradient;
             ctx.fill();
           }
 
-          p.x += p.dx + p.vx;
-          p.y += p.dy + p.vy;
-          
-          // Apply friction to velocity so bursts slow down naturally
-          p.vx *= 0.92;
-          p.vy *= 0.92;
+          pData[base + 0] += pData[base + 3] + pData[base + 5];
+          pData[base + 1] += pData[base + 4] + pData[base + 6];
+          pData[base + 5] *= 0.92;
+          pData[base + 6] *= 0.92;
+          pData[base + 7] += 0.05;
 
-          p.hue += 0.05; // Extremely slow color shifting
-
-          // Gentle wrap around with large buffer so they don't pop in/out
-          if (p.x < -20) p.x = width + 20;
-          if (p.x > width + 20) p.x = -20;
-          if (p.y < -20) p.y = height + 20;
-          if (p.y > height + 20) p.y = -20;
-        });
+          if (pData[base + 0] < -20) pData[base + 0] = width + 20;
+          if (pData[base + 0] > width + 20) pData[base + 0] = -20;
+          if (pData[base + 1] < -20) pData[base + 1] = height + 20;
+          if (pData[base + 1] > height + 20) pData[base + 1] = -20;
+        }
       };
 
       const animateParticles = () => {
+        updateThemeCache();
         ctx.clearRect(0, 0, width, height);
         
         // Ensure background is transparent so body gradient shows
         canvas.style.backgroundColor = 'transparent';
         
         drawLights();
-        ribbons.forEach(ribbon => drawRibbon(ribbon));
+        for (let i = 0, len = ribbons.length; i < len; i++) {
+          drawRibbon(ribbons[i]);
+        }
         drawParticles();
 
         time += 16; // Approx 60fps delta
@@ -3161,10 +3374,10 @@
 
     // Preload images
     const preloadAssets = () => {
-      slideshowImages.forEach(src => {
+      for (let i = 0, len = slideshowImages.length; i < len; i++) {
         const img = new Image();
-        img.src = src;
-      });
+        img.src = slideshowImages[i];
+      }
       const allCards = [
           "Assets/Cards/Damage/FemFemFemur.png",
           "Assets/Cards/Damage/SharkTooth.png",
@@ -3180,10 +3393,10 @@
           "Assets/Cards/Damage/OneyPlays.png",
           "Assets/Cards/Damage/BigJohnAI.png"
       ];
-      allCards.forEach(src => {
+      for (let i = 0, len = allCards.length; i < len; i++) {
         const img = new Image();
-        img.src = src;
-      });
+        img.src = allCards[i];
+      }
     };
     preloadAssets();
 
