@@ -316,6 +316,55 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
+    .india-badge {
+      background: linear-gradient(180deg, #FF9933 0%, #FFFFFF 50%, #138808 100%);
+      color: #111;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card.india-vision {
+      overflow: visible;
+    }
+
+    .card.india-vision .card-art-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+      clip: rect(0, 0, 0, 0);
+    }
+
+    .card.india-vision .india-flag-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 48px;
+      z-index: 1;
+      background: linear-gradient(180deg, #FF9933 0%, #FF9933 33.33%, #FFFFFF 33.33%, #FFFFFF 66.66%, #138808 66.66%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.08);
+      pointer-events: none;
+    }
+
+    .card.india-vision .india-chakra {
+      width: 22%;
+      height: 22%;
+      min-width: 28px;
+      min-height: 28px;
+      border-radius: 50%;
+      border: 4px solid #000080;
+      box-sizing: border-box;
+      background:
+        radial-gradient(circle at 50% 50%, #fff 0 32%, transparent 33%),
+        repeating-conic-gradient(from 0deg, #000080 0deg 2deg, transparent 2deg 15deg);
+    }
+
     .player {
       position: absolute;
       inset: 0;
@@ -842,7 +891,7 @@
     }
 
     /* Action Selection & Trivia Overlay */
-    #action-overlay, #trivia-overlay, #settings-overlay {
+    #action-overlay, #trivia-overlay, #settings-overlay, #debug-overlay {
       position: absolute;
       inset: 0;
       background: rgba(255, 255, 255, 0.8);
@@ -857,6 +906,96 @@
     
     #settings-overlay {
       z-index: 400; /* above everything */
+    }
+
+    #debug-overlay {
+      z-index: 405;
+    }
+
+    #debug-box {
+      max-width: min(640px, 94vw);
+      max-height: 88vh;
+      overflow-y: auto;
+      text-align: left;
+    }
+
+    #debug-box h2 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    .debug-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem 1.5rem;
+      margin: 1rem 0;
+    }
+
+    .debug-field label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: #333;
+    }
+
+    .debug-field input, .debug-field select {
+      width: 100%;
+      padding: 0.4rem 0.5rem;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .debug-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+    }
+
+    .debug-actions button, #debug-box .debug-row-btn {
+      font-size: 0.9rem;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 2px solid #333;
+      background: #f5f5f5;
+    }
+
+    #debug-box .debug-primary {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+
+    .debug-hint {
+      font-size: 0.8rem;
+      color: #666;
+      margin: 0.5rem 0 0;
+      text-align: center;
+    }
+
+    #nerd-stats-panel {
+      display: none;
+      position: fixed;
+      top: 4.5rem;
+      left: 0.5rem;
+      z-index: 350;
+      max-width: min(420px, 94vw);
+      padding: 0.55rem 0.75rem;
+      margin: 0;
+      font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #9f9;
+      background: rgba(0, 12, 8, 0.88);
+      border: 1px solid rgba(0, 255, 160, 0.35);
+      border-radius: 6px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+      white-space: pre-wrap;
+      word-break: break-word;
+      pointer-events: none;
+      user-select: none;
     }
 
     .modal-box {
@@ -1198,6 +1337,7 @@
   </div>
 
   <div id="battle-log"></div>
+  <pre id="nerd-stats-panel" aria-live="polite"></pre>
 
   <div id="action-overlay">
     <div class="modal-box" id="action-box">
@@ -1231,7 +1371,109 @@
         <input type="checkbox" id="performance-mode" style="width: 1.5rem; height: 1.5rem; cursor: pointer;">
         <label for="performance-mode" style="margin: 0; cursor: pointer;">Performance Mode (Disable Background Particles)</label>
       </div>
+      <div class="input-group" style="margin-bottom: 1.5rem; text-align: left; flex-direction: row; align-items: center; gap: 1rem;">
+        <input type="checkbox" id="idle-return-enabled" style="width: 1.5rem; height: 1.5rem; cursor: pointer;">
+        <label for="idle-return-enabled" style="margin: 0; cursor: pointer;">Return to title after inactivity</label>
+      </div>
+      <div class="input-group" style="margin-bottom: 1.5rem; text-align: left;">
+        <label for="idle-return-seconds">Inactivity timeout (seconds, 15–3600)</label>
+        <input type="number" id="idle-return-seconds" min="15" max="3600" step="15" value="60" style="width: 100%; box-sizing: border-box; padding: 0.5rem;">
+      </div>
       <button class="action-btn" id="close-settings-btn" style="margin-top: 2rem;">Close Settings</button>
+    </div>
+  </div>
+
+  <div id="debug-overlay">
+    <div class="modal-box" id="debug-box">
+      <h2>Debug</h2>
+      <p class="debug-hint">Chord: hold <strong>D</strong> + <strong>E</strong> + <strong>B</strong> to toggle (same idea as Settings: S+E+T).</p>
+      <div class="debug-grid">
+        <div class="debug-field">
+          <label for="debug-p1-hp">P1 HP</label>
+          <input type="number" id="debug-p1-hp" min="0" step="1" />
+        </div>
+        <div class="debug-field">
+          <label for="debug-p2-hp">P2 HP</label>
+          <input type="number" id="debug-p2-hp" min="0" step="1" />
+        </div>
+        <div class="debug-field">
+          <label for="debug-p1-max">P1 max HP</label>
+          <input type="number" id="debug-p1-max" min="1" step="1" />
+        </div>
+        <div class="debug-field">
+          <label for="debug-p2-max">P2 max HP</label>
+          <input type="number" id="debug-p2-max" min="1" step="1" />
+        </div>
+        <div class="debug-field">
+          <label for="debug-p1-handsize">P1 hand size</label>
+          <input type="number" id="debug-p1-handsize" min="1" max="12" step="1" />
+        </div>
+        <div class="debug-field">
+          <label for="debug-p2-handsize">P2 hand size</label>
+          <input type="number" id="debug-p2-handsize" min="1" max="12" step="1" />
+        </div>
+        <div class="debug-field">
+          <label for="debug-p1-extra">P1 extra turns</label>
+          <input type="number" id="debug-p1-extra" min="0" max="20" step="1" />
+        </div>
+        <div class="debug-field">
+          <label for="debug-p2-extra">P2 extra turns</label>
+          <input type="number" id="debug-p2-extra" min="0" max="20" step="1" />
+        </div>
+        <div class="debug-field" style="grid-column: 1 / -1;">
+          <label for="debug-turn">Current turn</label>
+          <select id="debug-turn">
+            <option value="p1">Player 1</option>
+            <option value="p2">Player 2</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" class="action-btn debug-primary" id="debug-apply-core" style="width:100%; margin-bottom:1rem;">Apply stats &amp; turn</button>
+
+      <hr style="border: none; border-top: 1px solid #ddd; margin: 1rem 0;" />
+
+      <div class="debug-field">
+        <label for="debug-add-card">Add card to hand</label>
+        <select id="debug-add-card"></select>
+      </div>
+      <div class="debug-actions">
+        <button type="button" id="debug-add-p1">Add → P1</button>
+        <button type="button" id="debug-add-p2">Add → P2</button>
+      </div>
+      <div class="debug-actions">
+        <button type="button" id="debug-random-p1">Random hand P1</button>
+        <button type="button" id="debug-random-p2">Random hand P2</button>
+        <button type="button" id="debug-clear-p1">Clear P1 hand</button>
+        <button type="button" id="debug-clear-p2">Clear P2 hand</button>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #ddd; margin: 1rem 0;" />
+
+      <div class="debug-grid">
+        <div class="debug-field">
+          <label for="debug-poison-dmg">Poison / tick</label>
+          <input type="number" id="debug-poison-dmg" min="0" step="1" value="50" />
+        </div>
+        <div class="debug-field">
+          <label for="debug-poison-rnd">Poison rounds</label>
+          <input type="number" id="debug-poison-rnd" min="1" max="20" step="1" value="3" />
+        </div>
+        <div class="debug-field" style="grid-column: 1 / -1;">
+          <label for="debug-poison-target">Poison target</label>
+          <select id="debug-poison-target">
+            <option value="p1">Player 1</option>
+            <option value="p2">Player 2</option>
+          </select>
+        </div>
+      </div>
+      <div class="debug-actions">
+        <button type="button" id="debug-add-poison">Add poison stack</button>
+        <button type="button" id="debug-clear-poison">Clear all poison</button>
+        <button type="button" id="debug-clear-india">Clear India vision</button>
+        <button type="button" id="debug-reset-somegirl">Reset Some Girl limit</button>
+      </div>
+
+      <button type="button" class="action-btn" id="debug-close-btn" style="margin-top: 1.5rem; background: #fcc; width: 100%;">Close debug</button>
     </div>
   </div>
 
@@ -1255,9 +1497,53 @@
 
   <script src="phrasesData.js"></script>
   <script src="cardsData.js"></script>
+  <script src="extraQuestionsData.js"></script>
+  <script>
+    (function mergeExtraCardQuestions() {
+      if (typeof extraQuestionsData === 'undefined' || typeof cardsData === 'undefined') return;
+      Object.keys(extraQuestionsData).forEach(key => {
+        const ix = key.indexOf('::');
+        if (ix === -1) return;
+        const cardKey = key.slice(0, ix);
+        const actionName = key.slice(ix + 2);
+        const card = cardsData[cardKey];
+        if (!card || !card.actions) return;
+        const action = card.actions.find(a => a.name === actionName);
+        if (action && Array.isArray(extraQuestionsData[key])) {
+          action.questions.push(...extraQuestionsData[key]);
+        }
+      });
+    })();
+  </script>
   <script>
     // --- Audio System ---
     let isPerformanceMode = false;
+
+    let idleReturnEnabled = true;
+    let idleReturnSeconds = 60;
+    const clampIdleSeconds = (n) => {
+      const x = Number.isFinite(n) ? Math.floor(n) : 60;
+      return Math.max(15, Math.min(3600, x));
+    };
+    const persistIdleSettings = () => {
+      localStorage.setItem('boneyIdleReturnEnabled', idleReturnEnabled ? '1' : '0');
+      localStorage.setItem('boneyIdleReturnSeconds', String(idleReturnSeconds));
+    };
+    const loadIdleSettingsIntoState = () => {
+      const en = localStorage.getItem('boneyIdleReturnEnabled');
+      const sec = localStorage.getItem('boneyIdleReturnSeconds');
+      if (en !== null) idleReturnEnabled = en !== '0';
+      if (sec !== null) idleReturnSeconds = clampIdleSeconds(parseInt(sec, 10));
+    };
+    const syncIdleSettingsUI = () => {
+      const cb = document.getElementById('idle-return-enabled');
+      const num = document.getElementById('idle-return-seconds');
+      if (cb) cb.checked = idleReturnEnabled;
+      if (num) {
+        num.value = idleReturnSeconds;
+        num.disabled = !idleReturnEnabled;
+      }
+    };
     
     const audioSystem = {
       musicVolume: 0.5,
@@ -1327,6 +1613,7 @@
         localStorage.setItem('boneySfxVolume', this.sfxVolume);
         localStorage.setItem('boneySilentMode', this.silentMode ? '1' : '0');
         localStorage.setItem('boneyPerformanceMode', isPerformanceMode ? '1' : '0');
+        persistIdleSettings();
       },
       loadSettings() {
         const savedMusic = localStorage.getItem('boneyMusicVolume');
@@ -1353,6 +1640,9 @@
         if (perfModeToggle) {
           perfModeToggle.checked = isPerformanceMode;
         }
+
+        loadIdleSettingsIntoState();
+        syncIdleSettingsUI();
       },
       shuffleMusicQueue() {
         this.musicQueue = [...this.musicTracks];
@@ -1424,6 +1714,18 @@
         if (overlay.style.display !== 'flex') {
           overlay.style.display = 'flex';
         }
+      }
+      if (keysPressed['d'] && keysPressed['e'] && keysPressed['b']) {
+        const dbg = document.getElementById('debug-overlay');
+        if (!dbg) return;
+        const next = dbg.style.display === 'flex' ? 'none' : 'flex';
+        dbg.style.display = next;
+        if (next === 'flex') {
+          refreshDebugPanel();
+        }
+        keysPressed['d'] = false;
+        keysPressed['e'] = false;
+        keysPressed['b'] = false;
       }
     });
 
@@ -1572,12 +1874,14 @@
           { src: "Assets/Cards/Magic/Theodore.png" },
           { src: "Assets/Cards/Damage/BigS.png" },
           { src: "Assets/Cards/Damage/OneyPlays.png" },
-          { src: "Assets/Cards/Damage/BigJohnAI.png" }
+          { src: "Assets/Cards/Damage/BigJohnAI.png" },
+          { src: "Assets/Cards/Pride/Falared Meat/fofo.png" },
+          { src: "Assets/Cards/Damage/davidsblackball.png" }
         ];
 
         this.players = [
-          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3, usedSomeGirlExplosion: false },
-          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonRounds: 0, poisonDamage: 0, handSize: 3, usedSomeGirlExplosion: false }
+          { key: "p1", label: "Player 1", accent: selectedPlayerColors.p1, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonStacks: [], handSize: 3, usedSomeGirlExplosion: false, indiaVisionRounds: 0 },
+          { key: "p2", label: "Player 2", accent: selectedPlayerColors.p2, hp: 500, maxHp: 500, hand: [], selected: null, extraTurns: 0, poisonStacks: [], handSize: 3, usedSomeGirlExplosion: false, indiaVisionRounds: 0 }
         ];
 
         // Draw initial hands now that player objects exist
@@ -1591,7 +1895,32 @@
       }
 
       formatName(src) {
+        if (src.includes("Falared Meat")) return "FalaredMeat";
         return src.split("/").pop().replace(".png", "");
+      }
+
+      static cardPowerScore(card) {
+        const d = card.data;
+        if (!d || !d.actions) return 0;
+        let best = 0;
+        for (const a of d.actions) {
+          let s = (a.damage || 0) + (a.poison || 0) * (a.poisonRounds || 1);
+          if (a.heal) s = Math.max(s, a.heal * 0.45);
+          if (a.lifesteal) s = Math.max(s, 220);
+          if (a.removeCards) s = Math.max(s, (a.removeCards || 0) * 130);
+          if (a.destroyStrongestOpponentCard) s = Math.max(s, 320);
+          best = Math.max(best, s);
+        }
+        return best;
+      }
+
+      static getPoisonState(player) {
+        const stacks = player.poisonStacks || [];
+        const active = stacks.filter(s => s.rounds > 0);
+        if (!active.length) return null;
+        const tickTotal = active.reduce((a, s) => a + s.damage, 0);
+        const maxRounds = Math.max(...active.map(s => s.rounds));
+        return { tickTotal, stackCount: active.length, maxRounds };
       }
 
       randomCards(count, playerKey) {
@@ -1743,6 +2072,17 @@
             message += ` Coinflip lost! You died.`;
           }
         }
+        if (action.coinFlipMog) {
+          const heads = Math.random() > 0.5;
+          if (heads) {
+            player.extraTurns += 3;
+            message += ` Heads! 3 extra turns!`;
+          } else {
+            const loss = Math.floor(player.maxHp * 0.75);
+            player.hp -= loss;
+            message += ` Tails! Lost ${loss} HP (¾ of max health)!`;
+          }
+        }
         if (action.extraTurns) {
           // Prevent infinite stacking of extra turns (e.g. Seething Rage spam)
           // Cap extra turns at a maximum of 2.
@@ -1760,9 +2100,33 @@
           }
         }
         if (action.poison) {
-          opponent.poisonRounds = action.poisonRounds || 3;
-          opponent.poisonDamage = action.poison;
-          message += ` Poisoned for ${action.poisonRounds || 3} rounds (${action.poison} dmg/round)!`;
+          if (!opponent.poisonStacks) opponent.poisonStacks = [];
+          const rounds = action.poisonRounds || 3;
+          opponent.poisonStacks.push({ rounds, damage: action.poison });
+          const st = BoneyGame.getPoisonState(opponent);
+          message += ` Poison stack added (${action.poison}/tick × ${rounds} rounds). Opponent now takes ${st.tickTotal} poison per tick from ${st.stackCount} stack(s).`;
+          if (Number.isFinite(action.indiaVisionRounds) && action.indiaVisionRounds > 0) {
+            opponent.indiaVisionRounds = Math.max(opponent.indiaVisionRounds || 0, action.indiaVisionRounds);
+            message += ` Squeeze: tricolor card vision + Hindi actions for ${action.indiaVisionRounds} of their turns!`;
+          }
+        }
+        if (action.destroyStrongestOpponentCard) {
+          if (!opponent.hand.length) {
+            message += ` Opponent had no cards in hand!`;
+          } else {
+            let bestIdx = 0;
+            let bestScore = BoneyGame.cardPowerScore(opponent.hand[0]);
+            for (let i = 1; i < opponent.hand.length; i++) {
+              const sc = BoneyGame.cardPowerScore(opponent.hand[i]);
+              if (sc > bestScore) {
+                bestScore = sc;
+                bestIdx = i;
+              }
+            }
+            const dead = opponent.hand[bestIdx];
+            opponent.hand.splice(bestIdx, 1);
+            message += ` Destroyed opponent's strongest card (${dead.name})!`;
+          }
         }
         if (action.removeCards) {
            opponent.hand.splice(0, action.removeCards);
@@ -1774,7 +2138,7 @@
       opponent.hp = Math.max(0, opponent.hp);
 
       // Play SFX based on action type
-      if (action.damage || action.lifesteal || action.selfDamage || action.poison) {
+      if (action.damage || action.lifesteal || action.selfDamage || action.poison || action.destroyStrongestOpponentCard || action.coinFlipMog) {
         audioSystem.playSfx('punch');
       } else if (action.heal) {
         audioSystem.playSfx('heal');
@@ -1785,6 +2149,9 @@
 
       endTurn(playerKey, cardId, isExpended = false) {
         const player = this.players.find(p => p.key === playerKey);
+        if (player && player.indiaVisionRounds > 0) {
+          player.indiaVisionRounds--;
+        }
         const cardIndex = player.hand.findIndex(c => c.id === cardId);
         
         // Deselect and remove card if it is expended
@@ -1816,17 +2183,30 @@
         if (nextPlayer) {
           nextPlayer.selected = null;
           
-          // If the next player is poisoned, apply damage and reduce counter
-          if (nextPlayer.poisonRounds > 0) {
-            nextPlayer.hp -= nextPlayer.poisonDamage;
-            nextPlayer.poisonRounds--;
+          const stacks = nextPlayer.poisonStacks || [];
+          const activePoison = stacks.filter(s => s.rounds > 0);
+          if (activePoison.length) {
+            const total = activePoison.reduce((a, s) => a + s.damage, 0);
+            nextPlayer.hp -= total;
+            stacks.forEach(s => {
+              if (s.rounds > 0) s.rounds--;
+            });
+            nextPlayer.poisonStacks = stacks.filter(s => s.rounds > 0);
             nextPlayer.hp = Math.max(0, nextPlayer.hp);
-            
-            // We return a poison message so the UI can show it
-            return `${nextPlayer.label} took ${nextPlayer.poisonDamage} poison damage!`;
+            return `${nextPlayer.label} took ${total} poison damage (${activePoison.length} stack(s))!`;
           }
         }
         return null;
+      }
+
+      createCardFromSrc(src) {
+        const name = this.formatName(src);
+        return {
+          src,
+          id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+          name,
+          data: cardsData[name] || null
+        };
       }
     }
 
@@ -1838,6 +2218,88 @@
 
     let isNewTurn = false; // Tracks if we need to play the start-of-turn animation
     let isTransitioning = false; // Prevents interactions during turn transition
+
+    const INDIA_CARD_NAMES_HI = {
+      FemFemFemur: "फेम फेम फीमर",
+      SharkTooth: "शार्क टूथ",
+      TheBONE: "द बोन",
+      TriloBite: "ट्राइलो बाइट",
+      Fern: "फर्न",
+      SaintGerken: "सेंट गर्केन",
+      Javier: "जेवियर",
+      JawiusJr: "जॉइस जूनियर",
+      SomeGirl: "सम गर्ल",
+      Theodore: "थिओडोर",
+      BigS: "बिग एस",
+      OneyPlays: "ओनी प्लेज़",
+      BigJohnAI: "बिग जॉन एआई",
+      FalaredMeat: "फलारेड मीट",
+      davidsblackball: "डेविड्स ब्लैक बॉल"
+    };
+
+    const INDIA_ACTION_NAMES_HI = {
+      "Whack!": "व्हैक!",
+      Through: "पार होना",
+      "Tooth Dart": "दांत का तीर",
+      Impale: "भोंकना",
+      Bone: "हड्डी",
+      "Bootleg Surgery": "नकली सर्जरी",
+      Bite: "काटना",
+      Chomp: "चबाना",
+      EAT: "खाना",
+      Choke: "दम घुटना",
+      Yell: "चिल्लाना",
+      "Crack a joke": "मज़ाक करना",
+      "Summon Tux": "टक्स बुलाना",
+      Cheat: "धोखा",
+      "Summon Jaw": "जॉ बुलाना",
+      "Seething Rage": "उबलता गुस्सा",
+      "Explode!": "फटना!",
+      Rain: "बारिश",
+      Piano: "पियानो",
+      Lie: "झूठ",
+      "Seek Javi": "जावी ढूंढो",
+      OneyDance: "ओनी डांस",
+      Slap: "थप्पड़",
+      "AI Fard": "एआई फर्ड",
+      Gemini: "जेमिनी",
+      Damnage: "डैमेज (डैमनेज)",
+      Mog: "मोग / दबदबा",
+      "No idea": "कोई विचार नहीं",
+      Squeeze: "निचोड़ना"
+    };
+
+    const INDIA_ACTION_DESC_HI = {
+      "Whack!": "डंडे से दुश्मन को ज़ोर से मारो — बहुत ज़्यादा नुकसान।",
+      Through: "मोगिंग की छड़ी फेंको; वापस आते ही दुश्मन के HP का 20% चुरा लो।",
+      "Tooth Dart": "तुरंत 100 नुकसान — शार्क के दांत जैसा तेज़।",
+      Impale: "50 नुकसान और 4 राउंड तक खून बहना।",
+      Bone: "हड्डी फेंको — 100 नुकसान (यह कार्ड ठीक नहीं है…)।",
+      "Bootleg Surgery": "सिक्का उछालो — सिर जीतोगे तो जीवित, पट्टी तो खत्म।",
+      Bite: "30 करोड़ साल का गुस्सा — 100 नुकसान।",
+      Chomp: "ज़ोर से काटो — 250 नुकसान।",
+      EAT: "फर्न खाओ — 50 स्वास्थ्य।",
+      Choke: "फर्न पर अटक जाओ — खुद को 15 नुकसान।",
+      Yell: "युद्ध-नाद करो — 80 स्वास्थ्य।",
+      "Crack a joke": "आधा मौका अच्छा लगे; नहीं तो अधिकतम HP का 15% खो दो। 2 अतिरिक्त चाल भी।",
+      "Summon Tux": "पेंगुइन की शक्ति — 160 नुकसान।",
+      Cheat: "ज़हर — 4 राउंड तक 50 प्रति राउंड।",
+      "Summon Jaw": "जबड़ा बुलाओ — 150 नुकसान।",
+      "Seething Rage": "2 अतिरिक्त चालें (अधिकतम 2 तक सीमित)।",
+      "Explode!": "प्रतिद्वंद्वी के हाथ से 2 कार्ड हटाओ।",
+      Rain: "ज़हर — 4 राउंड तक हर बारी 100 नुकसान।",
+      Piano: "पियानो गिराओ — 200 नुकसान।",
+      Lie: "इंटरनेट पर झूठ — 175 नुकसान।",
+      "Seek Javi": "जावियर ढूंढो — 250 स्वास्थ्य।",
+      OneyDance: "नृत्य — 5 राउंड तक हर बारी 120 ज़हर।",
+      Slap: "पेट पर थप्पड़ — 175 नुकसान; पृष्ठभूमि में पूरा ओनी डांस।",
+      "AI Fard": "100 AI-शैली नुकसान।",
+      Gemini: "नए मॉडल की ताकत — 210 नुकसान।",
+      Damnage: "300 नुकसान — फोफो कार्ड के लिए सब कुछ।",
+      Mog: "सिक्का — सिर तो 3 अतिरिक्त चालें; पट्टी तो अधिकतम HP का ¾ खो दो।",
+      "No idea": "प्रतिद्वंद्वी के सबसे ताकतवर हाथ का कार्ड नष्ट करो।",
+      Squeeze: "175 ज़हर प्रति राउंड, 2 राउंड; तिरंगा दृष्टि + हिंदी कार्रवाई 2 चालों तक।"
+    };
 
     const showTurnBanner = () => {
       const p = game.players.find(pl => pl.key === game.currentTurn);
@@ -1883,14 +2345,22 @@
       const initP1Width = oldP1Percent !== null ? oldP1Percent : `${p1Percent}%`;
       const initP2Width = oldP2Percent !== null ? oldP2Percent : `${p2Percent}%`;
 
-      const p1PoisonClass = p1.poisonRounds > 0 ? " poisoned" : "";
-      const p2PoisonClass = p2.poisonRounds > 0 ? " poisoned" : "";
+      const p1Ps = BoneyGame.getPoisonState(p1);
+      const p2Ps = BoneyGame.getPoisonState(p2);
+      const p1PoisonClass = p1Ps ? " poisoned" : "";
+      const p2PoisonClass = p2Ps ? " poisoned" : "";
       
       const p1ColorClass = p1Percent > 50 ? "health-high" : p1Percent > 20 ? "health-med" : "health-low";
       const p2ColorClass = p2Percent > 50 ? "health-high" : p2Percent > 20 ? "health-med" : "health-low";
 
-      const p1Status = p1.poisonRounds > 0 ? `<div class="status-icons"><span class="poison-badge">Poisoned (${p1.poisonRounds} rounds left)</span></div>` : "";
-      const p2Status = p2.poisonRounds > 0 ? `<div class="status-icons"><span class="poison-badge">Poisoned (${p2.poisonRounds} rounds left)</span></div>` : "";
+      const p1Icons = [];
+      if (p1Ps) p1Icons.push(`<span class="poison-badge">Poison ${p1Ps.tickTotal}/turn · ${p1Ps.stackCount} stacks · max ${p1Ps.maxRounds} rnd</span>`);
+      if (p1.indiaVisionRounds > 0) p1Icons.push(`<span class="india-badge">India vision (${p1.indiaVisionRounds} turns)</span>`);
+      const p2Icons = [];
+      if (p2Ps) p2Icons.push(`<span class="poison-badge">Poison ${p2Ps.tickTotal}/turn · ${p2Ps.stackCount} stacks · max ${p2Ps.maxRounds} rnd</span>`);
+      if (p2.indiaVisionRounds > 0) p2Icons.push(`<span class="india-badge">India vision (${p2.indiaVisionRounds} turns)</span>`);
+      const p1Status = p1Icons.length ? `<div class="status-icons">${p1Icons.join("")}</div>` : "";
+      const p2Status = p2Icons.length ? `<div class="status-icons">${p2Icons.join("")}</div>` : "";
 
       return `
         <div class="health-bars">
@@ -1940,11 +2410,18 @@
         
         // Check for fadeLevel to show visual indication of remaining uses
         const fadeStyle = card.fadeLevel ? `opacity: 0.5; filter: grayscale(50%) blur(1px);` : '';
+        const indiaOn = player.indiaVisionRounds > 0;
+        const indiaClass = indiaOn ? " india-vision" : "";
+        const cardTitleHi = INDIA_CARD_NAMES_HI[card.name] || card.name;
+        const cardAlt = indiaOn ? cardTitleHi : card.name;
+        const imgClass = indiaOn ? "card-art-hidden" : "";
+        const flagFace = indiaOn ? '<span class="india-flag-face"><span class="india-chakra" aria-hidden="true"></span></span>' : '';
 
         return `
           <div class="${containerClass}" id="container-${card.id}">
-            <button class="card${selectedClass}${animClass}" ${animStyle} data-player="${player.key}" data-id="${card.id}" id="card-${card.id}">
-              <img src="${card.src}" alt="${card.name}" style="${fadeStyle}" />
+            <button type="button" class="card${selectedClass}${animClass}${indiaClass}" ${animStyle} data-player="${player.key}" data-id="${card.id}" id="card-${card.id}" title="${indiaOn ? cardTitleHi.replace(/"/g, '&quot;') : ''}">
+              ${flagFace}
+              <img class="${imgClass}" src="${card.src}" alt="${cardAlt}" style="${fadeStyle}" />
             </button>
           </div>
         `;
@@ -2018,6 +2495,11 @@
       });
     };
 
+    const isFalaredMeatThemeName = (label) => {
+      const n = label.trim().toLowerCase();
+      return n === 'falared meat' || n === 'flared meat' || n === 'falaredmeat' || n === 'fofo' || n === 'folarmi';
+    };
+
     const render = () => {
       const activePlayer = game.players.find(pl => pl.key === game.currentTurn) || game.players[0];
       setSceneAccents(game.players[0].accent, game.players[1].accent, activePlayer.accent);
@@ -2025,7 +2507,7 @@
 
       // Apply dynamic character themes based on whose turn it is
       const activeName = activePlayer.label.toLowerCase();
-      document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme', 'theo-theme');
+      document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme', 'theo-theme', 'flared-theme', 'stinky-theme');
       if (activeName === 'shae') document.body.classList.add('shae-theme');
       else if (activeName === 'mrgerk') document.body.classList.add('jurassic-theme');
       else if (activeName === 'henry') document.body.classList.add('tech-theme');
@@ -2033,7 +2515,7 @@
       else if (activeName === 'kenly') document.body.classList.add('basketball-theme');
       else if (activeName === 'marwan') document.body.classList.add('tiktok-theme');
       else if (activeName === 'theo' || activeName === 'theodore' || activeName === 'tj') document.body.classList.add('theo-theme');
-      else if (activeName === 'flared meat') document.body.classList.add('flared-theme');
+      else if (isFalaredMeatThemeName(activePlayer.label)) document.body.classList.add('flared-theme');
       else if (activeName === 'stinky man') document.body.classList.add('stinky-theme');
 
       // Keep track of old health percentages to allow CSS transitions to trigger
@@ -2476,6 +2958,15 @@
       const list = document.getElementById('action-list');
       list.innerHTML = '';
 
+      const curPlayer = game.players.find(p => p.key === playerKey);
+      const indiaUi = curPlayer && curPlayer.indiaVisionRounds > 0;
+      const titleEl = overlay.querySelector('#action-box h2');
+      if (titleEl) {
+        titleEl.textContent = indiaUi
+          ? `${INDIA_CARD_NAMES_HI[card.name] || card.name} — कार्रवाई चुनें`
+          : 'Choose Action';
+      }
+
       card.data.actions.forEach((action, index) => {
         const btn = document.createElement('button');
         btn.className = 'action-btn';
@@ -2495,8 +2986,17 @@
              extraText = '<br><span style="color:red; font-size:0.9rem;">(Opponent needs at least 2 cards)</span>';
            }
         }
+        if (card.name === 'davidsblackball' && action.name === 'No idea') {
+          const opponent = game.players.find(p => p.key !== playerKey);
+          if (opponent && opponent.hand.length === 0) {
+            isDisabled = true;
+            extraText = '<br><span style="color:red; font-size:0.9rem;">(Opponent needs at least 1 card in hand)</span>';
+          }
+        }
         
-        btn.innerHTML = `<strong>${action.name}</strong><br><small style="font-size:1rem; font-weight:normal">${action.description}</small>${extraText}`;
+        const actLabel = indiaUi ? (INDIA_ACTION_NAMES_HI[action.name] || action.name) : action.name;
+        const descText = indiaUi ? (INDIA_ACTION_DESC_HI[action.name] || action.description) : action.description;
+        btn.innerHTML = `<strong>${actLabel}</strong><br><small style="font-size:1rem; font-weight:normal">${descText}</small>${extraText}`;
         
         if (isDisabled) {
            btn.disabled = true;
@@ -2513,6 +3013,8 @@
 
       document.getElementById('cancel-action-btn').onclick = () => {
         overlay.style.display = 'none';
+        const h2 = overlay.querySelector('#action-box h2');
+        if (h2) h2.textContent = 'Choose Action';
         isTransitioning = false;
         // Deselect the card
         const player = game.players.find(p => p.key === playerKey);
@@ -2531,6 +3033,11 @@
       
       // Pick a random question from the action's questions array
       const questionObj = action.questions[Math.floor(Math.random() * action.questions.length)];
+      const tPlayer = game.players.find(p => p.key === playerKey);
+      const triviaTitle = document.getElementById('trivia-title');
+      if (triviaTitle) {
+        triviaTitle.textContent = tPlayer && tPlayer.indiaVisionRounds > 0 ? 'ट्रिविया! (Trivia!)' : 'Trivia!';
+      }
       
       document.getElementById('trivia-question').textContent = questionObj.question;
       const optionsContainer = document.getElementById('trivia-options');
@@ -2703,18 +3210,37 @@
     let idleTimer;
     const resetIdleTimer = () => {
       clearTimeout(idleTimer);
+      idleTimer = undefined;
+      if (!idleReturnEnabled) return;
+      const ms = idleReturnSeconds * 1000;
       idleTimer = setTimeout(() => {
         startScreen.style.display = 'block';
         document.getElementById('name-setup').style.display = 'none';
         document.getElementById('board').style.display = 'none'; // Hide board on idle
-        document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme', 'theo-theme'); // Strip all custom themes
+        document.body.classList.remove('shae-theme', 'jurassic-theme', 'tech-theme', 'art-theme', 'basketball-theme', 'tiktok-theme', 'theo-theme', 'flared-theme', 'stinky-theme'); // Strip all custom themes
         document.body.removeAttribute('data-active'); // Remove player accent tint
         document.body.removeAttribute('data-screen'); // Remove setup screen background animation
         audioSystem.musicPlayer.pause(); // Pause background music on idle
         isNewTurn = true; // Reset game animation state if we idle out
         startSlideshow();
-      }, 60000); 
+      }, ms);
     };
+
+    document.getElementById('idle-return-enabled').addEventListener('change', (e) => {
+      idleReturnEnabled = e.target.checked;
+      const num = document.getElementById('idle-return-seconds');
+      if (num) num.disabled = !idleReturnEnabled;
+      persistIdleSettings();
+      clearTimeout(idleTimer);
+      idleTimer = undefined;
+      if (idleReturnEnabled) resetIdleTimer();
+    });
+    document.getElementById('idle-return-seconds').addEventListener('change', (e) => {
+      idleReturnSeconds = clampIdleSeconds(parseInt(e.target.value, 10));
+      e.target.value = idleReturnSeconds;
+      persistIdleSettings();
+      if (idleReturnEnabled) resetIdleTimer();
+    });
 
     startScreen.addEventListener('click', () => {
       startScreen.style.display = 'none';
@@ -2926,7 +3452,7 @@
       const basketballEmojis = ['🏀', '⛹️‍♂️', '🏟️', '🔥'];
       const tiktokEmojis = ['📱', '🎵', '🤳', '✨', '🤍'];
       const theoEmojis = ['🌧️', '⛈️', '🎹', '🌩️', '☔️', '☁️'];
-      const flaredEmojis = ['🥩', '🔥', '🍖', '🥓', '🍴'];
+      const flaredEmojis = ['🥩', '🍖', '🥓', '🍗', '🍔', '🌭', '🦴', '🐖', '🐄', '🐔', '🔥', '🍴', '🥘', '🫕'];
       const stinkyEmojis = ['💩', '🧦', '🧀', '🤢', '🦠'];
 
       const particles = [];
@@ -3088,7 +3614,7 @@
             // Force pink/purple hue for hearts in Shae mode, larger size
             const heartHue = Math.random() > 0.5 ? 330 : 300; 
             drawHeart(ctx, currentX, p.y, p.r * 8, heartHue, currentOpacity * 1.5);
-          } else if ((isJurassicMode || isTechMode || isArtMode || isBasketballMode || isTiktokMode || isTheoMode) && p.isHeart) {
+          } else if ((isJurassicMode || isTechMode || isArtMode || isBasketballMode || isTiktokMode || isTheoMode || isFlaredMode || isStinkyMode) && p.isHeart) {
             ctx.save();
             ctx.globalAlpha = currentOpacity * 1.5;
             ctx.font = `${p.r * 6}px Arial`;
@@ -3147,6 +3673,14 @@
       };
 
       const animateParticles = () => {
+        window.__boneyParticleDebug = {
+          n: particles.length,
+          lights: lightSources.length,
+          cw: width,
+          ch: height,
+          time
+        };
+
         ctx.clearRect(0, 0, width, height);
         
         // Ensure background is transparent so body gradient shows
@@ -3182,7 +3716,9 @@
           "Assets/Cards/Magic/Theodore.png",
           "Assets/Cards/Damage/BigS.png",
           "Assets/Cards/Damage/OneyPlays.png",
-          "Assets/Cards/Damage/BigJohnAI.png"
+          "Assets/Cards/Damage/BigJohnAI.png",
+          "Assets/Cards/Pride/Falared Meat/fofo.png",
+          "Assets/Cards/Damage/davidsblackball.png"
       ];
       allCards.forEach(src => {
         const img = new Image();
@@ -3193,6 +3729,220 @@
 
     // Initialize particles when script loads
     initBgParticles();
+
+    let nerdStatsVisible = false;
+    let nerdHudLastT = performance.now();
+    let nerdHudAccum = 0;
+    let nerdHudFrames = 0;
+    let nerdHudFps = 0;
+    let nerdHudFrameMs = 0;
+
+    const updateNerdStatsHud = (now) => {
+      const dt = now - nerdHudLastT;
+      nerdHudLastT = now;
+      nerdHudFrameMs = Math.round(dt * 10) / 10;
+      nerdHudAccum += dt;
+      nerdHudFrames++;
+      if (nerdHudAccum >= 450) {
+        nerdHudFps = Math.round((nerdHudFrames * 1000) / nerdHudAccum);
+        nerdHudFrames = 0;
+        nerdHudAccum = 0;
+      }
+
+      if (!nerdStatsVisible) {
+        requestAnimationFrame(updateNerdStatsHud);
+        return;
+      }
+
+      const panel = document.getElementById('nerd-stats-panel');
+      if (!panel) {
+        requestAnimationFrame(updateNerdStatsHud);
+        return;
+      }
+
+      const bg = window.__boneyParticleDebug;
+      const mem = performance.memory;
+      const conn = navigator.connection;
+      const lines = [];
+
+      lines.push('BoneyPlays · nerd HUD   toggle: Tab');
+      lines.push(`rAF FPS (avg ~450ms): ${nerdHudFps}    last Δ: ${nerdHudFrameMs} ms`);
+      lines.push(`viewport: ${window.innerWidth}×${window.innerHeight} px   dpr: ${window.devicePixelRatio}`);
+      lines.push(`screen: ${screen.width}×${screen.height}   doc.hidden: ${document.hidden}`);
+      lines.push(`visibility: ${document.visibilityState}   perf mode: ${typeof isPerformanceMode !== 'undefined' ? isPerformanceMode : '?'}`);
+      if (conn) {
+        lines.push(`network: ${conn.effectiveType || '?'}  downlink≈${conn.downlink != null ? conn.downlink + ' Mb/s' : '?'}`);
+      }
+
+      if (mem) {
+        const mb = (x) => (x / (1024 * 1024)).toFixed(1);
+        lines.push(`js heap (Chrome): used ${mb(mem.usedJSHeapSize)} / limit ${mb(mem.jsHeapSizeLimit)} MB`);
+      }
+
+      const theme = [...document.body.classList].filter(c => c.endsWith('-theme')).join(', ') || '(default)';
+      lines.push(`body theme: ${theme}   data-active: ${document.body.getAttribute('data-active') || '—'}`);
+
+      const boardOn = document.getElementById('board') && document.getElementById('board').style.display === 'block';
+      lines.push(`board visible: ${boardOn}`);
+
+      if (typeof game !== 'undefined' && game.players) {
+        const p1 = game.players[0];
+        const p2 = game.players[1];
+        const ps = (p) => {
+          const po = BoneyGame.getPoisonState(p);
+          return po ? `${po.tickTotal}/tick·${po.stackCount}stk` : 'clean';
+        };
+        lines.push(`turn: ${game.currentTurn}   extra: p1=${p1.extraTurns} p2=${p2.extraTurns}`);
+        lines.push(`P1 ${p1.hp}/${p1.maxHp} hp  hand ${p1.hand.length}/${p1.handSize}  poison ${ps(p1)}  india ${p1.indiaVisionRounds}`);
+        lines.push(`P2 ${p2.hp}/${p2.maxHp} hp  hand ${p2.hand.length}/${p2.handSize}  poison ${ps(p2)}  india ${p2.indiaVisionRounds}`);
+      }
+
+      if (bg) {
+        lines.push(`bg canvas: ${bg.cw}×${bg.ch}   sim particles: ${bg.n}   lights: ${bg.lights}   t≈${bg.time}`);
+      } else {
+        lines.push('bg canvas: (not init yet)');
+      }
+
+      lines.push(`cards in deck list: ${typeof game !== 'undefined' && game.allCards ? game.allCards.length : '—'}`);
+      panel.textContent = lines.join('\n');
+      requestAnimationFrame(updateNerdStatsHud);
+    };
+    requestAnimationFrame(updateNerdStatsHud);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const el = document.activeElement;
+      const tag = el && el.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (el && el.isContentEditable) return;
+      e.preventDefault();
+      nerdStatsVisible = !nerdStatsVisible;
+      const panel = document.getElementById('nerd-stats-panel');
+      if (!panel) return;
+      panel.style.display = nerdStatsVisible ? 'block' : 'none';
+      if (!nerdStatsVisible) panel.textContent = '';
+    }, true);
+
+    function refreshDebugPanel() {
+      const p1 = game.players[0];
+      const p2 = game.players[1];
+      document.getElementById('debug-p1-hp').value = p1.hp;
+      document.getElementById('debug-p2-hp').value = p2.hp;
+      document.getElementById('debug-p1-max').value = p1.maxHp;
+      document.getElementById('debug-p2-max').value = p2.maxHp;
+      document.getElementById('debug-p1-handsize').value = p1.handSize;
+      document.getElementById('debug-p2-handsize').value = p2.handSize;
+      document.getElementById('debug-p1-extra').value = p1.extraTurns;
+      document.getElementById('debug-p2-extra').value = p2.extraTurns;
+      document.getElementById('debug-turn').value = game.currentTurn;
+      const sel = document.getElementById('debug-add-card');
+      sel.innerHTML = game.allCards.map(c => {
+        const esc = c.src.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        return `<option value="${esc}">${game.formatName(c.src)}</option>`;
+      }).join('');
+    }
+
+    document.getElementById('debug-apply-core').addEventListener('click', () => {
+      const p1 = game.players[0];
+      const p2 = game.players[1];
+      p1.maxHp = Math.max(1, parseInt(document.getElementById('debug-p1-max').value, 10) || 500);
+      p2.maxHp = Math.max(1, parseInt(document.getElementById('debug-p2-max').value, 10) || 500);
+      p1.hp = Math.min(p1.maxHp, Math.max(0, parseInt(document.getElementById('debug-p1-hp').value, 10) || 0));
+      p2.hp = Math.min(p2.maxHp, Math.max(0, parseInt(document.getElementById('debug-p2-hp').value, 10) || 0));
+      p1.handSize = Math.max(1, Math.min(12, parseInt(document.getElementById('debug-p1-handsize').value, 10) || 3));
+      p2.handSize = Math.max(1, Math.min(12, parseInt(document.getElementById('debug-p2-handsize').value, 10) || 3));
+      p1.extraTurns = Math.max(0, parseInt(document.getElementById('debug-p1-extra').value, 10) || 0);
+      p2.extraTurns = Math.max(0, parseInt(document.getElementById('debug-p2-extra').value, 10) || 0);
+      game.currentTurn = document.getElementById('debug-turn').value === 'p2' ? 'p2' : 'p1';
+      game.players.forEach(p => { p.selected = null; });
+      setSceneAccents(game.players[0].accent, game.players[1].accent, game.players.find(pl => pl.key === game.currentTurn).accent);
+      document.body.setAttribute('data-active', game.currentTurn);
+      render();
+      showBattleLog('Debug: stats & turn applied.');
+    });
+
+    document.getElementById('debug-add-p1').addEventListener('click', () => {
+      const src = document.getElementById('debug-add-card').value;
+      if (!src) return;
+      game.players[0].hand.push(game.createCardFromSrc(src));
+      game.players[0].selected = null;
+      render();
+      showBattleLog(`Debug: added ${game.formatName(src)} to P1.`);
+    });
+
+    document.getElementById('debug-add-p2').addEventListener('click', () => {
+      const src = document.getElementById('debug-add-card').value;
+      if (!src) return;
+      game.players[1].hand.push(game.createCardFromSrc(src));
+      game.players[1].selected = null;
+      render();
+      showBattleLog(`Debug: added ${game.formatName(src)} to P2.`);
+    });
+
+    document.getElementById('debug-random-p1').addEventListener('click', () => {
+      const p1 = game.players[0];
+      p1.hand = game.randomCards(p1.handSize, 'p1');
+      p1.selected = null;
+      render();
+      showBattleLog('Debug: P1 random hand.');
+    });
+
+    document.getElementById('debug-random-p2').addEventListener('click', () => {
+      const p2 = game.players[1];
+      p2.hand = game.randomCards(p2.handSize, 'p2');
+      p2.selected = null;
+      render();
+      showBattleLog('Debug: P2 random hand.');
+    });
+
+    document.getElementById('debug-clear-p1').addEventListener('click', () => {
+      game.players[0].hand = [];
+      game.players[0].selected = null;
+      render();
+      showBattleLog('Debug: P1 hand cleared.');
+    });
+
+    document.getElementById('debug-clear-p2').addEventListener('click', () => {
+      game.players[1].hand = [];
+      game.players[1].selected = null;
+      render();
+      showBattleLog('Debug: P2 hand cleared.');
+    });
+
+    document.getElementById('debug-add-poison').addEventListener('click', () => {
+      const dmg = Math.max(0, parseInt(document.getElementById('debug-poison-dmg').value, 10) || 0);
+      const rnd = Math.max(1, parseInt(document.getElementById('debug-poison-rnd').value, 10) || 1);
+      const target = document.getElementById('debug-poison-target').value === 'p2' ? game.players[1] : game.players[0];
+      if (!target.poisonStacks) target.poisonStacks = [];
+      target.poisonStacks.push({ rounds: rnd, damage: dmg });
+      render();
+      showBattleLog(`Debug: poison stack ${dmg}×${rnd} on ${target.label}.`);
+    });
+
+    document.getElementById('debug-clear-poison').addEventListener('click', () => {
+      game.players.forEach(p => { p.poisonStacks = []; });
+      render();
+      showBattleLog('Debug: all poison cleared.');
+    });
+
+    document.getElementById('debug-clear-india').addEventListener('click', () => {
+      game.players.forEach(p => { p.indiaVisionRounds = 0; });
+      render();
+      showBattleLog('Debug: India vision cleared.');
+    });
+
+    document.getElementById('debug-reset-somegirl').addEventListener('click', () => {
+      game.players.forEach(p => { p.usedSomeGirlExplosion = false; });
+      render();
+      showBattleLog('Debug: Some Girl explosion reset.');
+    });
+
+    document.getElementById('debug-close-btn').addEventListener('click', () => {
+      document.getElementById('debug-overlay').style.display = 'none';
+      keysPressed['d'] = false;
+      keysPressed['e'] = false;
+      keysPressed['b'] = false;
+    });
 
     render();
   </script>

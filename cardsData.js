@@ -955,5 +955,165 @@ const cardsData = {
         ]
       }
     ]
+  },
+  "FalaredMeat": {
+    "type": "Pride",
+    "actions": [
+      {
+        "name": "Damnage",
+        "damage": 300,
+        "description": "300 damage, what... what... whattttttt.... anything for the fofo card i guess... i told him i would add him, a month ago and i would not lie...",
+        "questions": [
+          {
+            "question": "The first Pride marches in the U.S. are often traced to which year?",
+            "options": ["1970", "1985", "1965", "1999"],
+            "answer": 0
+          },
+          {
+            "question": "What does the P in LGBTQIA+ often stand for?",
+            "options": ["Pansexual", "Pineapple", "Premium", "Pterodactyl"],
+            "answer": 0
+          },
+          {
+            "question": "Which city hosted the Stonewall uprising?",
+            "options": ["New York City", "Los Angeles", "Chicago", "Miami"],
+            "answer": 0
+          },
+          {
+            "question": "A butcher display of marbled beef is showing mostly what?",
+            "options": ["Fat streaks in muscle", "Bone dust", "Food coloring", "Plastic wrap"],
+            "answer": 0
+          },
+          {
+            "question": "What is a common protein target for plant-based 'meat' products?",
+            "options": ["Soy or pea protein", "Cotton", "Paper", "Air"],
+            "answer": 0
+          },
+          {
+            "question": "Rainbow flags at Pride symbolize mainly what idea?",
+            "options": ["Diversity and visibility", "Weather forecasts", "Traffic lights", "RGB gaming"],
+            "answer": 0
+          }
+        ]
+      },
+      {
+        "name": "Mog",
+        "coinFlipMog": true,
+        "description": "Flip a coin, if its heads you get 3 turns if its tails you loose 3/4ths of your maximum health.",
+        "questions": [
+          {
+            "question": "What does 'allyship' usually mean in LGBTQ+ spaces?",
+            "options": ["Supporting marginalized people even if you don't share their identity", "Winning every argument", "Owning a ship", "Staying silent always"],
+            "answer": 0
+          },
+          {
+            "question": "Which cut is typically the most tender on a cow?",
+            "options": ["Tenderloin", "Shank", "Brisket (always)", "Hoof"],
+            "answer": 0
+          },
+          {
+            "question": "What is food safety 'danger zone' temperature roughly (°F) where bacteria grow fast?",
+            "options": ["40–140°F", "0–32°F", "200–250°F", "Room temperature only"],
+            "answer": 0
+          },
+          {
+            "question": "June is widely celebrated as what in many countries?",
+            "options": ["Pride Month", "National Spoon Week", "Sock Day", "Tax Season"],
+            "answer": 0
+          },
+          {
+            "question": "Ground beef should be cooked to what minimum internal temperature (°F) for safety?",
+            "options": ["160°F", "120°F", "Rare is always fine", "32°F"],
+            "answer": 0
+          },
+          {
+            "question": "A coin flip is roughly what probability for heads?",
+            "options": ["50%", "100%", "0%", "75%"],
+            "answer": 0
+          }
+        ]
+      }
+    ]
+  },
+  "davidsblackball": {
+    "type": "Damage",
+    "actions": [
+      {
+        "name": "No idea",
+        "destroyStrongestOpponentCard": true,
+        "description": "Makes your enemy's strongest card in hand die.",
+        "questions": [
+          {
+            "question": "What is a black hole's boundary from which light cannot escape called?",
+            "options": ["Event horizon", "Red line", "Oops zone", "Firewall sticker"],
+            "answer": 0
+          },
+          {
+            "question": "Which force dominates on astronomical scales for stars and galaxies?",
+            "options": ["Gravity", "Static cling", "Magnets only", "Rubber bands"],
+            "answer": 0
+          },
+          {
+            "question": "A sphere's volume grows with the cube of its what?",
+            "options": ["Radius", "Color", "Name", "Age"],
+            "answer": 0
+          },
+          {
+            "question": "In billiards, the black ball is most associated with which game variant?",
+            "options": ["8-ball", "Checkers", "Tennis", "Go fish"],
+            "answer": 0
+          },
+          {
+            "question": "What do we call an object so dense its escape velocity exceeds the speed of light?",
+            "options": ["Black hole", "Red dwarf", "Neutron sponge", "Bright hole"],
+            "answer": 0
+          },
+          {
+            "question": "David versus Goliath is a story about what kind of matchup?",
+            "options": ["Underdog vs giant", "Chef vs soup", "Cat vs laser", "Two rocks"],
+            "answer": 0
+          }
+        ]
+      },
+      {
+        "name": "Squeeze",
+        "poison": 175,
+        "poisonRounds": 2,
+        "indiaVisionRounds": 2,
+        "description": "Does poison damage and makes your players vision go into indian. (makes cards the Indian flag and changes the cards language to hindi) lasts 2 of their turns",
+        "questions": [
+          {
+            "question": "Poison damage over multiple turns is similar to what RPG concept?",
+            "options": ["Damage over time (DoT)", "One-shot KO", "Mana refund", "Bonus armor forever"],
+            "answer": 0
+          },
+          {
+            "question": "How many official languages does India's constitution broadly recognize (order-of-magnitude)?",
+            "options": ["Dozens (22 scheduled + many more)", "Exactly 1", "Exactly 2", "Zero"],
+            "answer": 0
+          },
+          {
+            "question": "The Ashoka Chakra on India's flag has how many spokes?",
+            "options": ["24", "8", "50", "3"],
+            "answer": 0
+          },
+          {
+            "question": "Hindi is written primarily in which script?",
+            "options": ["Devanagari", "Cyrillic", "Hangul", "Wingdings"],
+            "answer": 0
+          },
+          {
+            "question": "What color stripe is at the TOP of India's national flag?",
+            "options": ["Saffron (orange)", "Green", "Purple", "Invisible"],
+            "answer": 0
+          },
+          {
+            "question": "Neurotoxic venom often targets mainly what system?",
+            "options": ["Nervous system", "Hair growth", "Photosynthesis", "Wi-Fi"],
+            "answer": 0
+          }
+        ]
+      }
+    ]
   }
 };
